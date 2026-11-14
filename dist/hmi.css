@@ -3,3 +3,14 @@
 .stage-art,.mini-items .art,.item-card .art,.rail-car{mask-image:linear-gradient(to right,transparent,#000 10%,#000 90%,transparent),linear-gradient(to bottom,transparent,#000 10%,#000 90%,transparent);mask-composite:intersect}.badge-card .art,.badge-strip .art,.reward-row .art,.badge-detail>.art{mask-image:radial-gradient(ellipse,#000 58%,transparent 73%)}.app-brand .logo{mix-blend-mode:multiply;mask-image:radial-gradient(ellipse,#000 45%,transparent 72%)}
 .event-content{gap:.7cqw}.event-content>.status-pill{align-self:flex-start}.event-content h2{font-size:2.7cqw}.event-content .range-card{padding:.9cqw 1.3cqw}.range-card h3{margin-bottom:.6cqw}.event-content .reward-row{min-height:3.6cqw;height:3.6cqw;flex-shrink:0;font-size:1.3cqw}.event-content .reward-row .art{width:3.5cqw;height:3.5cqw}.event-content .primary,.event-content .secondary{min-height:3.3cqw;padding:.6cqw 1.3cqw}.summary-metrics>div{padding:1cqw .8cqw}.summary-metrics h3{margin-bottom:.7cqw}.summary-total{padding:.8cqw 1cqw}.event-picture{display:flex;align-items:center}.event-picture .art{height:100%;max-height:100%}
 .turn-arrow{width:2.5cqw;height:2.5cqw;flex-shrink:0}.drive-character>.art{mask-image:linear-gradient(to right,transparent,#000 7%,#000 95%,transparent)}.badge-detail .detail-pet{mask-image:linear-gradient(to bottom,transparent,#000 12%,#000 90%,transparent)}.wardrobe-message{font-size:.8cqw;line-height:1.35;text-align:center}.fitting-art .art{mask-image:linear-gradient(to right,transparent,#000 4%,#000 96%,transparent)}
+
+/* 붕붕이 상황별 정지 이미지 (주행 중 오른쪽 창) */
+.drive-character>img.drive-pet{left:0;width:85%;object-fit:contain;mask-image:none}
+/* 빨간 경고: 캐릭터 없이 숫자만 크게 */
+.drive-character.numbers-only .drive-stats{position:static;height:100%;justify-content:center;align-items:center;gap:2cqw;font-size:3cqw;font-weight:600}
+.drive-character.numbers-only .drive-stats .icon{width:3cqw;height:3cqw}
+/* 상태 표시 글자 16px, 아이콘도 글자에 맞춤 */
+.drive-brand .weather-label{font-size:16px;line-height:1.5;white-space:nowrap}
+.drive-brand .weather-label .icon{width:20px;height:20px;flex:none}
+/* 오른쪽 창 오른쪽 아래 "모의 데이터" 표식: 대사 카드 아래 별도 줄이라 겹치지 않음 */
+.drive-mock{align-self:flex-end;margin-top:.5cqw;font-size:12px;line-height:1.5;color:#5f6470}
