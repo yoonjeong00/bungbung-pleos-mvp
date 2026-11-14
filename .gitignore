@@ -1,0 +1,11 @@
+node_modules/
+.gradle/
+**/build/
+local.properties
+android/app/src/main/assets/
+dist/downloads/
+.env*
+*.keystore
+*.jks
+.DS_Store
+.openai/
