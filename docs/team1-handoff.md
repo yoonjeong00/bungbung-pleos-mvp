@@ -1,54 +1,49 @@
 # 팀원 1 인수인계 · 가상 차량 / 시나리오 / 주차 연출
 
-2026-11-14. 이번 변경은 동작 기반 작업이며, 승인된 화이트 3D 시안은 아직 적용하지 않았다. 기존 픽셀 그래픽은 임시 소스로 사용한다.
+2026-11-14 업데이트. 현재 진입점은 `dist/js/hmi-app.js`이며 화이트 HMI를 사용합니다.
 
-## 파일 소유권
-- 팀원 1: dist/js/vehicle.js, dist/js/presentation.js, tests/team1.mjs
-- 팀원 2: dist/js/logic.js, dist/js/state-machine.js — 성장·회복 판단, 배지, 저장
-- 팀원 3: dist/js/character.js, room-ui.js, CSS, 이미지
-- app.js: 통합 연결부. 병합 담당과 변경 위치 공유 필요.
+## 이번 수정
+- `demo-session.js`: 화면 미리보기, 시나리오, 수동 데이터 입력을 메모리 내 시연 세션으로 분리합니다. 시연 중에는 `bungbung-v1`에 쓰지 않습니다.
+- `내 토토로 돌아가기`: 시연 시작 전 토토 상태와 차량 스냅샷으로 돌아옵니다. 시연 중 초기화·다른 미리보기를 여러 번 눌러도 원본을 유지합니다. 새로고침 시에도 원본 저장 상태를 읽습니다.
+- 첫 실행 시 2,180 km/청소년/배지 등을 실제 저장에 주입하던 코드를 제거했습니다. 디자인 샘플은 화면 바로 보기에서 확인합니다.
+- 수동 패널에 시동, 오늘 거리, 오늘 시간을 추가했습니다. 수동 조작도 시연 세션입니다.
+- S7 신호 대기 속도는 0입니다. S2/S3/빗길의 48은 시나리오 표시값입니다. 수동 주행의 속도는 센서가 없으므로 —로 표시합니다. 주차 판단에는 속도를 쓰지 않습니다.
+- 주행 캐릭터는 확정된 ackStage를 사용합니다. 성장 대기 상태에서 D로 전환해도 먼저 외형이 바뀌지 않습니다.
+- 새 HMI의 터치 반응을 PresentationController에 연결했습니다. P 이탈, 제한/미수신, 숨김/페이지 이탈 시 타이머와 말풍선을 취소합니다.
+- 방 이미지 전체를 확대하던 반응을 제거했습니다. 현재 토토와 방이 합쳐진 한 장 이미지라 별도 캐릭터 호흡/걷기를 구현한 것으로 표시하지 않습니다.
+- Android의 `?android=1`과 `?embedded`를 모두 인식합니다. 없는 ZIP 다운로드 대신 GitHub 소스 링크를 제공합니다.
 
-## 가상 데이터 계약
-VehicleProvider.value는 복사본이다. subscribe(listener)는 구독 해제 함수를 반환한다. set(patch)는 항목별 갱신이며 isMock은 항상 true다.
-- gear: P/R/N/D 또는 null
-- uxRestricted: true/false/null
-- ignition: OFF/ACC/ON/START 또는 null
-- odometerKm: 0–999999 km
-- tripDistanceKm: 0–2000 km
-- tripTimeMin: 0–1440 분
-- rangeRemainingKm: 0–1500 km
-- outsideTempC: -40–60 °C
-- dataStatus: 각 항목별 OK/LOADING/NO_PERMISSION/UNSUPPORTED/ERROR
-- receivedAt: 항목별 수신 시각(ms), sequence: 변경 순번
-잘못된 값은 null+ERROR로 전달. 0과 null을 구분한다. null 기본 상태는 LOADING이며 명시적 dataStatus를 우선한다. 유효한 새 값이 오면 해당 항목 상태는 OK로 회복한다. 데모 baseline의 빈 상태 맵은 기존 모의 데이터 호환용이며 실차 허가를 뜻하지 않는다.
+## 파일 및 팀 경계
+- 팀원 1: vehicle.js, presentation.js, demo-session.js, tests/team1.mjs, tests/hmi-integration.mjs.
+- 통합부 변경: hmi-app.js, index.html, 터치 반응 관련 hmi.css.
+- 팀원 2: logic.js, state-machine.js. 이번 작업에서 성장/배지/회복 규칙 자체는 변경하지 않았습니다.
+- 팀원 3: 정적 화면과 이미지. 현재 hmi-art.js는 시안 PNG의 영역을 잘라 쓰는 2D 표시입니다.
 
-## 시나리오
-자동/다음 단계는 S1에서 초기화한 뒤 동일 캐릭터 상태를 유지하며 S1–S5를 진행한다. 회복·성장 보상은 팀원 2 규칙이 판정한다. 일시정지 후 이어 재생은 다음 단계부터 진행한다. 자동재생 다시 누르기는 S1부터 재시작한다. 마지막 단계 후 다시 시작하려면 자동재생을 누른다.
-개별 S1–S10 버튼은 독립 fixture이며 데모 저장 상태를 초기화한다. 특히 독립 S4/S5는 결과를 직접 보여주는 fixture이고, 실차 감지 증명이 아니다.
-수동 패널: 기어/누적 거리/제한 상태/주행 가능 거리/외기온. 누적 거리를 10300으로 변경하면 부화 기준 10000 대비 첫 성장 조건을 확인할 수 있다.
+## 차량 데이터 계약
+VehicleProvider.value는 복사본이며 subscribe는 구독 해제 함수를 반환합니다.
+set은 부분 갱신입니다. 잘못된 값은 null+ERROR, 명시적 미지원은 UNSUPPORTED로 유지합니다.
+isMock은 true이며 실제 SDK 어댑터가 아닙니다.
+기어 P만으로 충분하지 않고 derive의 parked 결과가 true일 때 상호작용을 허용합니다.
+OFF/ACC/START/제한/판단 불명은 잠금 화면입니다. OFF에서 상호작용을 열지 않습니다.
 
-## 연출 연결 계약
-PresentationController는 차량 판단이나 보상을 계산하지 않는다.
-- setParked(boolean): 통합부의 검증된 parked만 전달
-- start(type,{duration,payload}): 주차가 아니면 false
-- onChange(active|null): 표시할 포즈 변경
-- onComplete(event): 정상 완료 시에만 호출
-- stop()/dispose(): 타이머 및 오래된 콜백 무효화
-주행/미수신/오류 시 즉시 취소하며 취소된 연출은 onComplete를 호출하지 않는다. 보류 이벤트 저장은 팀원 2 대기열 책임이다.
-표준 이벤트 대응: REFUEL_RECOVERED→recovery, GROWTH_READY→growth, DAILY_SUMMARY→summary, BIRTH_READY→birth. 대응표는 외부 팀 연동용이며 현재 앱 내부 대기열은 소문자 명칭을 사용한다.
-현재 controller 연결: 터치 joy, 걷기 walking, 메모 후 summary. 회복/성장은 기존 이벤트 카드와 CSS 연출을 사용한다. 완성된 3D 모션 클립은 아직 없다.
+## 이벤트 계약
+PresentationController는 시각적 반응과 취소만 담당합니다. 보상은 팀원 2의 상태 엔진이 담당합니다.
+성장·회복 이벤트는 D에서 숨기고 P 복귀 시 보존된 이벤트를 다시 보여줍니다.
+시연 자동재생의 다음 장면 이동은 현재 카드 확인으로 처리합니다.
+시연으로 얻은 보상은 시연 세션을 나가면 사라집니다.
 
-## 그래픽 교체
-character.js의 pet() 출력 경계를 유지하면 이미지 교체 가능. 그래픽 담당자는 투명 PNG, 공통 캔버스, 발바닥 중앙 기준점, 두 귀 포함 여백을 전달해야 한다. 기존 sprite sheet 좌표는 새 개별 PNG에 그대로 재사용하지 않는다.
+## 아직 필요한 작업
+1. 팀원 2: 실제 이동에 따른 첫 주행/저온 배지 조건, 제한 중 거리 계산, 회복 판정/중복 이벤트 보강.
+2. 팀원 3: 캐릭터 없는 방 배경 + 투명 캐릭터 원화/포즈. 같은 캔버스, 발바닥 중앙 기준점, 양쪽 귀 여백이 필요합니다.
+3. 팀원 1: 위 에셋을 받으면 캐릭터만 호흡·걷기·메모 가져오기 및 회복/성장 모션을 연결합니다. 현재는 완성된 3D 모션이 아닙니다.
+4. 하루 마무리는 S10 또는 홈 요약으로 확인합니다. 실제 시동 OFF 직전 이벤트는 SDK 수신 순서와 화면 허용 조건을 합의한 뒤 연결해야 합니다.
+5. Android: SDK/AVD 환경에서 APK 빌드와 실행 검증. 현재 실차 SDK 연결 및 공식 주행 사용 승인은 없습니다.
 
 ## 검증
-node tests/team1.mjs
-node tests/logic.mjs
-node tests/state-regressions.mjs
-node tests/layout-model.mjs
-브라우저에서 다음 단계 S1→S5와 S8 화면 제한을 확인했다. 자동 타이머 pause/resume/cancel은 결정적 타이머 테스트로 검증했다. 실제 Android/실차 SDK 검증은 미완료다.
-
-## Android 실행
-python scripts/sync-android.py
-Android Studio에서 android 폴더 열기 → JDK17 / SDK35 / Gradle8.9 환경 → 프로젝트 동기화 → 준비된 AVD 선택 → Run.
-이 프로젝트는 WebView 데모이며 Pleos SDK 연동 앱이나 주행 승인 완료 앱이 아니다. 현재 작업 환경에는 Android SDK/adb/emulator가 없어 APK 빌드와 에뮬레이터 실행은 수행하지 못했다.
+```bash
+for f in tests/*.mjs; do node "$f"; done
+python3 scripts/sync-android.py
+```
+기존 테스트 5개에 실제 HMI 진입점을 실행하는 hmi-integration.mjs를 추가했습니다.
+최소 DOM 어댑터로 저장 격리, 원본 복귀, S7, 성장 보류, 터치 취소, Android 분기, 저장소 오류를 검증합니다.
+이 테스트는 브라우저 시각 검수나 Android 실행 검증을 대체하지 않습니다.
