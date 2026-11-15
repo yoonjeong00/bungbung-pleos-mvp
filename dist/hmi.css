@@ -129,3 +129,8 @@ body.android-app.render-compat .app-window *{animation:none!important;transition
 body.android-app.render-compat .art,body.android-app.render-compat .welcome-art,body.android-app.render-compat .welcome-scene{mask-image:none!important;-webkit-mask-image:none!important}
 .sdk-distance-panel{display:flex;gap:18px;align-items:center;flex:none;padding:9px 16px;background:#f6f9ff;border-bottom:1px solid #cbd5e4;color:#334155;font-size:13px}
 .sdk-distance-panel>div{min-width:0}.sdk-distance-panel b{display:block;font-size:12px}.sdk-distance-panel strong{font-size:24px;color:#2446df}.sdk-distance-panel small{display:block;font-size:11px;line-height:1.5;overflow-wrap:anywhere}.sdk-distance-panel[data-state=error],.sdk-distance-panel[data-state=stale]{background:#fff5e8}
+
+/* Departure illustration: static, uncropped, separate from live vehicle values. */
+.drive-character.departure-scene{display:flex;flex-direction:column;gap:.6cqw;overflow:hidden}
+.drive-character>.departure-art{display:block;width:100%;height:0;flex:1;min-height:0;object-fit:contain;object-position:center;border-radius:1.5cqw}
+.drive-character.departure-scene>.drive-stats{position:static;display:flex;flex-direction:row;justify-content:flex-end;gap:1.5cqw;flex-shrink:0;padding:.4cqw .8cqw;font-size:1.3cqw}
