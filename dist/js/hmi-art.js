@@ -1,6 +1,6 @@
 /** Reference artwork viewport library.
  * Display pre-extracted regions so WebView cannot expose adjacent screenshot UI.
- * These are opaque screenshot regions, not transparent standalone 3D assets.
+ * Characters and accessories use transparent cutouts; room scenes retain their backgrounds.
  * Keep UI labels/numbers outside these viewports and render them as live HTML.
  */
 export const referenceImages=Object.freeze({
@@ -40,8 +40,11 @@ export const crops=Object.freeze({
  map:['driving',536,233,533,410],
 });
 const escapeAttr=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const cutoutNames=Object.freeze(['rain','stage1','stage2','stage3','stage4','logo','headphones','cap','scarf','flower','star','knit','bowl']);
+const sceneNames=new Set(['wardrobe','recovery','summary']);
 export function art(name,className='',label=''){
  const crop=crops[name];if(!crop)throw new RangeError(`Unknown HMI artwork: ${name}`);
  const [,x,y,width,height]=crop;
- return `<img class="hmi-art ${escapeAttr(className)}" data-art="${escapeAttr(name)}" src="hmi-assets/extracted/${name}.webp" width="${width}" height="${height}" alt="${escapeAttr(label)}" decoding="async">`;
+ const cutout=cutoutNames.includes(name),kind=cutout?'art-cutout':sceneNames.has(name)?'art-scene':'art-reference';
+ return `<img class="hmi-art ${kind} ${escapeAttr(className)}" data-art="${escapeAttr(name)}" src="hmi-assets/${cutout?'cutouts':'extracted'}/${name}.webp" width="${width}" height="${height}" alt="${escapeAttr(label)}" decoding="async">`;
 }

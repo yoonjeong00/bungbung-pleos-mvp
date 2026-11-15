@@ -1,6 +1,8 @@
-# 붕붕이 · Pleos 차량 동행 MVP
+# 마이카펫(My car pet) · Pleos 차량 동행 MVP
 
 토토와 첫 만남 → 주차 중 방·꾸미기 → 모의 출발·연료 부족·회복·성장 → 하루 마무리를 시연하는 Android WebView 앱입니다. 웹 진입점은 `dist/index.html`, 앱 로직은 `dist/js/hmi-app.js`입니다.
+
+크롬 제출 영상: [녹화 준비·버튼 순서](docs/recording-guide.md). 녹화 모드: `?android=1&record=1&v=20261115-r10`.
 
 ## 실제 연동과 시연 범위
 
