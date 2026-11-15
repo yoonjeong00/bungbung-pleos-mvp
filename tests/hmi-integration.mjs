@@ -40,6 +40,9 @@ const scene=i=>node('#scenario-list').onclick({target:{closest:()=>({dataset:{sc
 const click=action=>node('#screen-body').listeners.click({target:{closest:()=>({dataset:{action}})}});
 const manual=patch=>{formValues={gear:'P',ignition:'ON',odometerKm:'10025',rangeRemainingKm:'420',outsideTempC:'18',tripDistanceKm:'32',tripTimeMin:'41',uxRestricted:'false',...patch};node('#manual').onsubmit({preventDefault(){},target:node('#manual')});};
 scene(6);
+assert.match(node('#screen-body').innerHTML,/신호 대기 · D/);
+assert.match(node('#screen-body').innerHTML,/잠시 멈췄어요/);
+assert.doesNotMatch(node('#screen-body').innerHTML,/함께 달리는 중/);
 assert.match(node('#screen-body').innerHTML,/rail-speed">0<small>/,'S7 is stopped in D');
 assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
 scene(4);manual({gear:'D',odometerKm:'10300'});
