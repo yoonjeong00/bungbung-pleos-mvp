@@ -4,7 +4,7 @@ const params=new URLSearchParams(location.search);
 if(params.has('android')||params.has('embedded'))document.body.classList.add('embedded');
 if(params.has('android'))document.body.classList.add('android-app');
 if(params.get('record')==='1')document.body.classList.add('recording-mode');
-import('./hmi-app.js?v=20261115-r11').catch(error=>{
+import('./hmi-app.js?v=20261115-r12').catch(error=>{
  console.error('Bungbung initialization failed',error);
  const host=document.querySelector('#screen-body');
  if(!host)return;
@@ -14,7 +14,7 @@ import('./hmi-app.js?v=20261115-r11').catch(error=>{
  const title=document.createElement('h1');title.textContent='화면을 불러오지 못했어요';
  const help=document.createElement('p');help.textContent='저장된 토토는 삭제하지 않았어요. 아래 오류 내용을 전달해 주세요.';
  const detail=document.createElement('pre');detail.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px';
- detail.textContent='UI r11 · '+String(error?.stack||error?.message||error);
+ detail.textContent='UI r12 · '+String(error?.stack||error?.message||error);
  const retry=document.createElement('button');retry.className='primary';retry.textContent='다시 불러오기';retry.addEventListener('click',()=>location.reload());
  panel.append(title,help,detail,retry);host.append(panel);
 });

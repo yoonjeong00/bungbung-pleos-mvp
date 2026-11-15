@@ -257,3 +257,18 @@ body.recording-mode .demo-head p{max-width:680px;font-size:13px;line-height:1.5;
  .room-response,.room-stage>.bubble{grid-column:1;grid-row:2}
 }
 @media(max-width:550px){.home-side,body.android-app .home-side{grid-template-columns:1fr;grid-template-rows:repeat(4,auto)}}
+
+/* Event illustrations define the row height; summaries and actions share its edges. */
+.event-layout,body.android-app .event-layout{height:auto;flex:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:stretch;overflow:visible}
+.event-picture,body.android-app .event-picture{display:block;align-self:start;min-height:0;padding:0;border-radius:22px;overflow:hidden;background:transparent}
+.event-picture>.art-scene,body.android-app .event-picture>.art-scene{display:block;width:100%;height:auto;max-width:100%;max-height:none;object-fit:contain;border-radius:22px}
+.event-content,body.android-app .event-content{padding:0;overflow:visible;min-height:0;justify-content:flex-start;gap:clamp(10px,.8cqw,16px)}
+.event-content>.farewell,body.android-app .event-content>.farewell{margin:auto 0 0;padding:12px 0;font-size:clamp(20px,1.7cqw,32px)!important;line-height:1.4}
+.event-content>.farewell+.actions,body.android-app .event-content>.farewell+.actions{margin-top:0;padding:0}
+.event-content>.actions>button{min-height:48px}
+@media(max-width:900px){
+ .event-layout,body.android-app .event-layout{grid-template-columns:minmax(0,1fr);gap:18px}
+ .event-picture,body.android-app .event-picture{width:min(100%,560px);justify-self:center}
+ .event-content>.farewell,body.android-app .event-content>.farewell{margin-top:12px}
+ .event-content>.primary,body.android-app .event-content>.primary{margin-top:12px}
+}
