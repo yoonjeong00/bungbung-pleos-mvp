@@ -201,3 +201,13 @@ body.android-app .event-picture>.art-scene{width:auto;height:auto;max-width:100%
 .welcome-scene>.welcome-art-hero{width:auto;height:auto;max-width:100%;max-height:100%;border-radius:24px;mix-blend-mode:normal}
 body.android-app .drive-brand>.art-cutout{border-radius:0;padding:2px;background:transparent}
 body.android-app .drive-character.mood-scene{border-radius:24px;overflow:hidden;background:#f2f3fa;padding:12px}
+
+/* Filming preserves mock-data disclosure while removing diagnostic clutter. */
+body.recording-mode .sdk-distance-panel,body.recording-mode #render-build,body.recording-mode #app-demo-toggle{display:none!important}
+body.recording-mode .app-demo-bar{min-height:28px;padding:4px 16px;font-size:12px;gap:12px}
+body.recording-mode #data-source{line-height:1.4}
+body.recording-mode .app-demo-bar #recording-fullscreen{margin-left:auto;white-space:nowrap}
+:fullscreen body.recording-mode #recording-fullscreen{display:none}
+body.recording-mode .demo-head{align-items:flex-start}
+body.recording-mode .demo-head p{max-width:680px;font-size:13px;line-height:1.5;font-weight:400}
+#demo-close{background:#fff;border:1px solid #cbd2eb;border-radius:10px;padding:8px 14px}
