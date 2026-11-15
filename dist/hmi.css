@@ -7,3 +7,41 @@
 /* Keep the baked-in room still: separate rigged character assets are pending. */
 [hidden]{display:none!important}
 body.embedded .mock-label{display:inline}
+
+/* The Android activity owns only its allocated app window. Pleos owns vehicle
+   controls, navigation and system chrome outside this window. */
+.app-demo-bar{display:none}
+body.android-app{margin:0;height:100dvh;overflow:hidden}
+body.android-app .studio{height:100%;display:flex;flex-direction:column;padding:0;max-width:none}
+body.android-app .app-demo-bar{display:flex;flex:none;align-items:center;justify-content:space-between;gap:8px;padding:6px 16px;font-size:12px;background:#eef1ff;color:#343d70}
+body.android-app .app-demo-bar button{padding:5px 12px;border:1px solid #cbd2eb;border-radius:8px;background:white;color:inherit}
+body.android-app .device{flex:1;min-height:0;aspect-ratio:auto;width:100%;padding:0;border:0;border-radius:0;box-shadow:none;background:#f5f5fa}
+body.android-app .screen{display:block;height:100%;border-radius:0;overflow:auto}
+body.android-app .system-top,body.android-app .system-dock,body.android-app .vehicle-rail,body.android-app .map-panel{display:none}
+body.android-app .screen-body,body.android-app .screen-body.driving{display:block;height:100%;min-height:0}
+body.android-app .app-window{height:100%;min-height:420px;box-sizing:border-box;padding:1.4cqw 1.8cqw}
+body.android-app .app-brand{flex-shrink:0}
+body.android-app .drive-app{height:100%;box-sizing:border-box}
+body.android-app .locked{height:100%;box-sizing:border-box}
+body.android-app .demo-panel{position:fixed;z-index:50;inset:44px 12px 12px;margin:0;overflow:auto;box-shadow:0 12px 60px #0005}
+body.android-app .home-side{min-width:0;overflow:hidden}
+body.android-app .closet-shortcut{overflow:hidden}
+body.android-app .mini-items{height:0;min-height:64px}
+body.android-app .mini-items .art{height:100%;max-width:50%;object-fit:contain}
+body.android-app .room-level{flex-wrap:wrap;gap:6px}
+body.android-app .page-heading h1{font-size:clamp(20px,2.5cqw,36px)}
+body.android-app .app-tabs{min-height:44px;flex-shrink:0}
+@media(max-width:700px){
+ body.android-app .app-window{min-height:650px}
+ body.android-app .home-layout{grid-template-columns:1fr;grid-template-rows:minmax(240px,1fr) auto;gap:12px}
+ body.android-app .home-side{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ body.android-app .closet-shortcut{grid-column:1/-1;flex-direction:row;align-items:center;gap:8px}
+ body.android-app .mini-items{display:none}
+ body.android-app .closet-shortcut small{flex:1}
+ body.android-app .metric-link{min-height:64px;font-size:14px}
+ body.android-app .metric-link strong{font-size:18px}
+ body.android-app .app-tabs button{font-size:14px}
+ body.android-app .app-brand{font-size:16px}
+ body.android-app .event-layout,body.android-app .wardrobe-layout,body.android-app .badge-layout{grid-template-columns:1fr;overflow:auto}
+ body.android-app .event-picture{min-height:220px}
+}
