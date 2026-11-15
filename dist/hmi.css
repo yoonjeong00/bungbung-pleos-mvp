@@ -238,3 +238,22 @@ body.recording-mode .demo-head p{max-width:680px;font-size:13px;line-height:1.5;
 .closet-link>.chev{margin-left:auto;width:20px;height:20px;flex:none;color:#8791a6}
 .closet-shortcut .room-art-note{display:block;margin-top:8px;padding-top:8px;border-top:1px solid #e2e6f0;font-size:11px!important;color:#727b90;line-height:1.4}
 @media(max-width:700px){body.android-app .home-side{grid-template-columns:1fr;grid-template-rows:repeat(4,auto)}body.android-app .home-layout{grid-template-rows:minmax(300px,50vh) auto}.room-stage>.bubble{font-size:16px}.room-stage,body.android-app .room-stage{grid-template-rows:minmax(0,1fr) 80px}}
+
+/* Shared grid tracks align the actual artwork edges with the sidebar, not its letterbox. */
+.home-layout,body.android-app .home-layout{height:auto;flex:none;grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-rows:auto 64px;gap:12px 24px;align-items:stretch;overflow:visible}
+.room-stage,body.android-app .room-stage{display:contents}
+.room-visual{grid-column:1;grid-row:1;position:relative;aspect-ratio:3/2;min-width:0;overflow:hidden;border-radius:24px;background:#f0f2fa;align-self:start}
+.room-visual>.room-image{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain}
+.room-visual>.room-pet-button{left:45%;top:12%;width:45%;height:76%}
+.home-side,body.android-app .home-side{grid-column:2;grid-row:1;align-self:stretch;grid-template-rows:1fr 1fr 1.55fr 1.35fr;align-content:stretch;padding:0;gap:12px;overflow:visible}
+.home-side>.metric-link{min-height:0}
+.home-side>.journey-card{justify-content:center}
+.home-side>.closet-shortcut{justify-content:center}
+.room-response,.room-stage>.bubble{grid-column:1/-1;grid-row:2;margin:0;min-height:56px;padding:10px 16px}
+@media(max-width:1000px){
+ .home-layout,body.android-app .home-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 64px auto;gap:12px}
+ .room-visual{grid-column:1;grid-row:1}
+ .home-side,body.android-app .home-side{grid-column:1;grid-row:3;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:12px}
+ .room-response,.room-stage>.bubble{grid-column:1;grid-row:2}
+}
+@media(max-width:550px){.home-side,body.android-app .home-side{grid-template-columns:1fr;grid-template-rows:repeat(4,auto)}}

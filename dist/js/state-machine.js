@@ -1,4 +1,4 @@
-import {derive,readValue} from './logic.js?v=20261115-r10';
+import {derive,readValue} from './logic.js?v=20261115-r11';
 const eventTypes=['recovery','growth','summary','birth'];
 export function addBadge(s,id,at=Date.now()){
  if(!s.badges.includes(id)){s.badges.push(id);(s.badgeEarnedAt??={})[id]=at}

@@ -1,12 +1,12 @@
-import {installRecording} from './recording.js?v=20261115-r10';
-import {welcome,cleanPetName,escapeHtml,petParticle} from './onboarding.js?v=20261115-r10';
-import {DemoSession} from './demo-session.js?v=20261115-r10';
-import {PresentationController} from './presentation.js?v=20261115-r10';
-import {art as artwork} from './hmi-art.js?v=20261115-r10';
-import {icon} from './hmi-icons.js?v=20261115-r10';
-import {VehicleProvider,ScenarioPlayer,scenes,baseline,FUEL_THRESHOLDS} from './vehicle.js?v=20261115-r10';
-import {derive,initial,load,save,stages,readValue,signalValid} from './logic.js?v=20261115-r10';
-import {advance,takeEvent,completeEvent,enqueue} from './state-machine.js?v=20261115-r10';
+import {installRecording} from './recording.js?v=20261115-r11';
+import {welcome,cleanPetName,escapeHtml,petParticle} from './onboarding.js?v=20261115-r11';
+import {DemoSession} from './demo-session.js?v=20261115-r11';
+import {PresentationController} from './presentation.js?v=20261115-r11';
+import {art as artwork} from './hmi-art.js?v=20261115-r11';
+import {icon} from './hmi-icons.js?v=20261115-r11';
+import {VehicleProvider,ScenarioPlayer,scenes,baseline,FUEL_THRESHOLDS} from './vehicle.js?v=20261115-r11';
+import {derive,initial,load,save,stages,readValue,signalValid} from './logic.js?v=20261115-r11';
+import {advance,takeEvent,completeEvent,enqueue} from './state-machine.js?v=20261115-r11';
 const art=(n,c='')=>artwork(n,`art ${c}`),$=s=>document.querySelector(s),fmt=n=>n===null?'—':Math.round(n).toLocaleString('ko-KR');
 const recordingMode=new URLSearchParams(location.search).get('record')==='1';
 let adbSimulation=false;
@@ -31,10 +31,10 @@ function heading(title,sub='',back=false,extra=''){return `<div class="page-head
 function home(){
  const selected=s.hat==='none'?'headphones':s.hat,selectedName=items.find(([id])=>id===selected)?.[1]||'헤드폰';
  return `${heading(escapeHtml(s.petName||'토토')+petParticle(s.petName,'과','와')+' 잠시 쉬어가요',d.temp!==null&&d.temp<=0?'추운 날이에요 · 따뜻하게 챙겨 입어요':'',false,btn('이름 바꾸기','rename','rename-button'))}
- <div class="page-content home-layout"><div class="room-stage">
+ <div class="page-content home-layout"><div class="room-stage"><div class="room-visual">
  <img class="room-image" src="hmi-assets/home-room.png" alt="하얀 음악방에서 쉬는 토토">
  <button class="room-pet-button" data-action="pet" aria-label="토토 쓰다듬기"></button>
- <div class="room-response"><span>토토를 눌러 인사해 보세요</span></div>
+ </div><div class="room-response"><span>토토를 눌러 인사해 보세요</span></div>
  </div><div class="home-side">
  <button class="metric-link surface" data-page="range">${icon('fuel')}<span>주행 가능 거리<strong>${fmt(d.range)} km</strong></span>${icon('right','chev')}</button>
  <button class="metric-link surface" data-action="summary">${icon('route')}<span>오늘의 주행<strong>${fmt(readValue(v,'tripDistanceKm'))} km · ${fmt(readValue(v,'tripTimeMin'))}분</strong></span>${icon('right','chev')}</button>
