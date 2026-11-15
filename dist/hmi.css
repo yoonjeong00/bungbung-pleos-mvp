@@ -100,3 +100,26 @@ body.android-app .primary.welcome-start,.welcome-start{margin-top:.9cqw;min-heig
 @media(max-width:700px){.welcome-layout{grid-template-columns:1fr;gap:18px}.welcome-visual h1{white-space:normal}.welcome-scene{height:390px;flex:none}.welcome-content{gap:16px}.welcome-symbol{width:72px;height:52px}.welcome-features li{min-height:72px;padding:10px 16px;border-radius:22px}.welcome-name input{min-height:48px}.welcome-start,body.android-app .primary.welcome-start{min-height:56px;border-radius:28px}.welcome-caption{padding:8px 20px}}
 
 .welcome-features li,.welcome-name label{font-family:WelcomeBold,sans-serif}
+/* Independent raster regions: never render neighbouring reference UI. */
+.hmi-art{object-fit:contain}
+body.android-app .screen{overflow:hidden}
+body.android-app .app-window{overflow:hidden;background:#f0f2fa}
+body.android-app .home-layout{grid-template-rows:minmax(0,1fr);min-height:0;overflow:hidden}
+body.android-app .room-stage{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+body.android-app .room-stage>.room-image{min-height:0;object-position:center}
+body.android-app .room-level{position:static;margin:8px;min-width:0}
+body.android-app .home-side{display:grid;grid-template-rows:auto auto minmax(0,1fr);min-height:0}
+body.android-app .closet-shortcut{display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:8px;min-height:0;overflow:hidden}
+body.android-app .mini-items{display:flex;height:100%;min-height:0;overflow:hidden;align-items:center}
+body.android-app .mini-items .art{width:50%;height:100%;min-width:0;min-height:0;object-fit:contain;mask-image:none;-webkit-mask-image:none}
+body.android-app .closet-shortcut small{font-size:clamp(11px,1cqw,15px);line-height:1.4;overflow-wrap:anywhere}
+body.android-app .closet-shortcut .primary{position:static;min-height:44px;margin:0;flex-shrink:0}
+body.android-app .room-distance{backdrop-filter:none;background:#fffffff5}
+@media(max-width:700px){
+ body.android-app .screen{overflow:auto}
+ body.android-app .app-window{height:auto;min-height:100%}
+ body.android-app .home-layout{grid-template-rows:minmax(240px,1fr) auto;overflow:visible;flex:none}
+ body.android-app .home-side{grid-template-rows:auto auto;overflow:visible}
+ body.android-app .closet-shortcut{grid-template-columns:1fr auto;grid-template-rows:auto}
+ body.android-app .mini-items{display:none}
+}
