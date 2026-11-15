@@ -163,3 +163,10 @@ body.android-app .wardrobe-message{font-size:clamp(11px,.85cqw,15px);line-height
  body.android-app .drive-brand>.art{width:32px;height:32px}
  .welcome-scene>.welcome-art-hero{min-height:0}
 }
+
+/* Team warning scenes: static imagery and live text, no UI baked into art. */
+.drive-character.mood-scene{display:flex;flex-direction:column;gap:8px}
+.drive-character.mood-scene>img.drive-pet{position:static;display:block;width:100%;height:0;flex:1;min-height:0;object-fit:contain;mask-image:none;-webkit-mask-image:none;mix-blend-mode:normal}
+.drive-character.mood-scene>.drive-stats{position:static;display:flex;flex-direction:row;justify-content:flex-end;font-size:clamp(14px,1.3cqw,22px);gap:16px;flex-shrink:0}
+.critical-warning{grid-column:2/-1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:20px;padding:32px;background:#fff4f2;color:#67231c;min-height:280px;height:100%}
+.critical-warning h1{font-size:clamp(24px,3cqw,48px);margin:0}.critical-warning p{font-size:clamp(18px,1.7cqw,28px);line-height:1.6;margin:0}.critical-warning small{font-size:14px;line-height:1.6}

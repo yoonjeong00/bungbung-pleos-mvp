@@ -1,3 +1,5 @@
+> 후속 갱신: 팀원 통합으로 모의 위험 경고 화면·경고/제한 중 거리 보류·해제 적립이 추가됐습니다. 실제 경고 SDK는 미연동입니다. 최신 범위는 [team-integration.md](team-integration.md)를 참고하세요. 아래는 통합 전 감사 기록입니다.
+
 # 제출 전 데이터·SDK 점검
 
 검토 대상: `feat/team1-demo-session` 작업본. 코드와 Node 실행 검증이며 실제 Pleos 하드웨어 수용 테스트가 아니다.
