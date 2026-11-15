@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {DemoSession} from '../dist/js/demo-session.js';
+let writes=0;
+const session=new DemoSession({load:()=>({hat:'none'}),save:()=>writes++});
+const s=session.leave();
+for(let i=0;i<30;i++)session.checkpoint(s);
+assert.equal(writes,0);
+s.hat='cap';session.checkpoint(s);session.checkpoint(s);
+assert.equal(writes,1);
+session.enter(s);s.hat='scarf';session.checkpoint(s);
+assert.equal(writes,1);
+assert.equal(session.leave().hat,'cap');
+console.log('PASS save deduplication and demo isolation');

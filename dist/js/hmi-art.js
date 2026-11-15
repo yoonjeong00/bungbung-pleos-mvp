@@ -40,9 +40,11 @@ export const crops=Object.freeze({
  map:['driving',536,233,533,410],
 });
 const escapeAttr=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cropSequence=0;
 export function art(name,className='',label=''){
+ const clipId=`hmi-crop-${++cropSequence}`;
  const crop=crops[name];if(!crop)throw new RangeError(`Unknown HMI artwork: ${name}`);
  const [source,x,y,width,height]=crop,ref=referenceImages[source];
  const accessible=label?`role="img" aria-label="${escapeAttr(label)}"`:'aria-hidden="true"';
- return `<svg xmlns="http://www.w3.org/2000/svg" class="hmi-art ${escapeAttr(className)}" data-art="${escapeAttr(name)}" viewBox="${x} ${y} ${width} ${height}" preserveAspectRatio="${name==='map'?'xMidYMid slice':'xMidYMid meet'}" style="aspect-ratio:${width}/${height};overflow:hidden" ${accessible}><defs><clipPath id="crop-${name}-${className.replace(/[^a-z0-9]/gi,'')}">${name==='rain'?'<path d="M1143 198H1517V420H1445V589H1143Z"/>':`<rect x="${x}" y="${y}" width="${width}" height="${height}"/>`}</clipPath></defs><image clip-path="url(#crop-${name}-${className.replace(/[^a-z0-9]/gi,'')})" href="${ref.src}" x="0" y="0" width="${ref.width}" height="${ref.height}"/></svg>`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" class="hmi-art ${escapeAttr(className)}" data-art="${escapeAttr(name)}" viewBox="${x} ${y} ${width} ${height}" preserveAspectRatio="${name==='map'?'xMidYMid slice':'xMidYMid meet'}" style="aspect-ratio:${width}/${height};overflow:hidden" ${accessible}><defs><clipPath id="${clipId}">${name==='rain'?'<path d="M1143 198H1517V420H1445V589H1143Z"/>':`<rect x="${x}" y="${y}" width="${width}" height="${height}"/>`}</clipPath></defs><image clip-path="url(#${clipId})" href="${ref.src}" x="0" y="0" width="${ref.width}" height="${ref.height}"/></svg>`;
 }

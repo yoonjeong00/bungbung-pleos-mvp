@@ -1,6 +1,7 @@
-﻿// TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
+﻿import {cleanPetName} from './onboarding.js';
+// TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
 export const stages=[{name:'알',km:0},{name:'아기',km:0},{name:'어린이',km:300},{name:'청소년',km:2000},{name:'어른',km:6000}];
-export const initial=()=>({baseOdo:10000,hat:'none',badges:[],badgeEarnedAt:{},items:['headphones','cap','scarf'],ackStage:1,pendingGrowthStage:1,maxDistanceKm:0,queuedEvents:[],activeEvent:null,activeEventData:null,lowRangeKm:null,refuelDetails:null,vehicleSnapshot:null});
+export const initial=()=>({petName:'토토',baseOdo:10000,hat:'none',badges:[],badgeEarnedAt:{},items:['headphones','cap','scarf'],ackStage:1,pendingGrowthStage:1,maxDistanceKm:0,queuedEvents:[],activeEvent:null,activeEventData:null,lowRangeKm:null,refuelDetails:null,vehicleSnapshot:null});
 const limits={odometerKm:[0,999999],tripDistanceKm:[0,2000],tripTimeMin:[0,1440],rangeRemainingKm:[0,1500],outsideTempC:[-40,60]};
 export function signalValid(v,k,now=Date.now()){
  const status=v.dataStatus?.[k];
@@ -37,6 +38,7 @@ export function load(){
   const ackStage=Number.isInteger(r.ackStage)?Math.max(1,Math.min(4,r.ackStage)):1;
   const pendingGrowthStage=Number.isInteger(r.pendingGrowthStage)?Math.max(ackStage,Math.min(4,r.pendingGrowthStage)):ackStage;
   return {...s,
+   petName:cleanPetName(r.petName),
    baseOdo:Number.isFinite(r.baseOdo)&&r.baseOdo>=0&&r.baseOdo<=999999?r.baseOdo:s.baseOdo,
    hat:['none','cap','flower','scarf'].includes(r.hat)?r.hat:'none',badges,
    badgeEarnedAt:Object.fromEntries(badges.filter(id=>Number.isFinite(r.badgeEarnedAt?.[id])&&r.badgeEarnedAt[id]>0).map(id=>[id,r.badgeEarnedAt[id]])),

@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {cleanPetName,welcome} from '../dist/js/onboarding.js';
+import {initial,load,save} from '../dist/js/logic.js';
+assert.equal(cleanPetName('  '),'토토');
+assert.equal(Array.from(cleanPetName('가'.repeat(20))).length,12);
+assert.equal(cleanPetName('<별이>'),'별이');
+const html=welcome('별이',()=>'<svg></svg>');
+assert.match(html,/id="pet-name"/);assert.match(html,/data-action="welcome-start"/);
+assert.match(html,/onboarding-hero.webp/);assert.doesNotMatch(welcome('" onclick="bad',()=>''),/value="" onclick=/);
+let value=null;globalThis.localStorage={setItem:(k,v)=>value=v,getItem:()=>value};
+const state=initial();state.petName='보리';save(state);assert.equal(load().petName,'보리');
+value='{"hat":"cap"}';assert.equal(load().petName,'토토');
+console.log('PASS onboarding: name validation, escaping, saved name restoration, legacy migration');
