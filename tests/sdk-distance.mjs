@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {distanceStatus} from '../dist/js/sdk-distance.js';
+const now=100000;
+const live={source:'pleos-sdk',state:'live',connected:true,supported:true,access:'READ',odometerKm:1234.5,receivedAt:now,via:'listener',updates:2};
+assert.equal(distanceStatus(live,now).value,'1,234.5');
+assert.equal(distanceStatus({...live,odometerKm:1235},now).value,'1,235');
+assert.equal(distanceStatus(live,now+45001).state,'stale');
+for(const p of [{...live,source:'mock'},{...live,odometerKm:null},{...live,odometerKm:-1},{...live,odometerKm:NaN},{...live,state:'error'},{...live,state:'stopped'},{...live,supported:false},{...live,connected:false}])assert.equal(distanceStatus(p,now).value,'—');
+assert.equal(distanceStatus(live,now).via,'변경 알림');
+assert.equal(distanceStatus({...live,via:'read'},now).via,'현재 값 조회');
+console.log('PASS SDK monitor: live updates, stale/null/error masking, source separation');

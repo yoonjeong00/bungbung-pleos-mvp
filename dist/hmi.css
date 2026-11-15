@@ -127,3 +127,5 @@ body.android-app .room-distance{backdrop-filter:none;background:#fffffff5}
 #render-build{font-size:11px;white-space:nowrap;color:#515b77}
 body.android-app.render-compat .app-window *{animation:none!important;transition:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;mix-blend-mode:normal!important;filter:none!important;box-shadow:none!important}
 body.android-app.render-compat .art,body.android-app.render-compat .welcome-art,body.android-app.render-compat .welcome-scene{mask-image:none!important;-webkit-mask-image:none!important}
+.sdk-distance-panel{display:flex;gap:18px;align-items:center;flex:none;padding:9px 16px;background:#f6f9ff;border-bottom:1px solid #cbd5e4;color:#334155;font-size:13px}
+.sdk-distance-panel>div{min-width:0}.sdk-distance-panel b{display:block;font-size:12px}.sdk-distance-panel strong{font-size:24px;color:#2446df}.sdk-distance-panel small{display:block;font-size:11px;line-height:1.5;overflow-wrap:anywhere}.sdk-distance-panel[data-state=error],.sdk-distance-panel[data-state=stale]{background:#fff5e8}
