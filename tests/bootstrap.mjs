@@ -3,7 +3,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import vm from 'node:vm';
 const root=new URL('../dist/',import.meta.url);
 const html=readFileSync(new URL('index.html',root),'utf8');
-const version='20261115-r9';
+const version='20261115-r10';
 assert.ok(html.includes(`bootstrap.js?v=${version}`));
 assert.ok(html.includes(`hmi.css?v=${version}`));
 const visited=new Set();
@@ -25,7 +25,7 @@ const host=element();host.replaceChildren=()=>{replaced=true;host.children=[]};
 const context={URLSearchParams,location:{search:'?android=1',reload(){reloaded=true}},console:{error(){}},
  document:{body:{classList:{add:x=>classes.add(x)}},querySelector:()=>host,createElement:element},
  loadApp(){assert.ok(classes.has('embedded')&&classes.has('android-app'));return Promise.reject(new Error('missing export <example>'))}};
-vm.runInNewContext(source.replace("import('./hmi-app.js?v=20261115-r9')",'loadApp()'),context);
+vm.runInNewContext(source.replace("import('./hmi-app.js?v=20261115-r10')",'loadApp()'),context);
 await new Promise(resolve=>setImmediate(resolve));
 assert.ok(replaced);assert.equal(host.children.length,1);
 const children=host.children[0].children;
