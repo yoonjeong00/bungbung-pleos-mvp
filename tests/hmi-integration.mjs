@@ -83,6 +83,15 @@ assert.match(node('#screen-body').innerHTML,/차량 상태를 확인/);
 assert.equal(storage.get('bungbung-v1'),savedBeforeNative,'native simulation preserves saved pet');
 node('#demo-return').onclick();assert.doesNotMatch(node('#data-source').textContent,/ADB/);
 
+// Personal rename persists, native demo rename is discarded when returning.
+click('rename');assert.match(node('#screen-body').innerHTML,/id="pet-name"/);
+node('#pet-name').value='별이';click('welcome-start');
+assert.match(node('#screen-body').innerHTML,/별이와 잠시/);
+assert.equal(JSON.parse(storage.get('bungbung-v1')).petName,'별이');
+native({scene:1});node('#pet-name').value='보리';click('welcome-start');
+assert.match(node('#screen-body').innerHTML,/보리와 잠시/);
+node('#demo-return').onclick();assert.match(node('#screen-body').innerHTML,/별이와 잠시/);
+
 // Read/write failures used to crash before the first render through bootstrap code.
 globalThis.localStorage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
 await import('../dist/js/hmi-app.js?storage-denied');
