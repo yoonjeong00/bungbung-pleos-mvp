@@ -63,6 +63,26 @@ assert.match(node('.fitting-name').textContent,/머플러/);
 click('apply');assert.equal(node('#screen-body').innerHTML,screenBefore,'apply preserves screen root');
 node('#demo-return').onclick();
 
+// Exercise the same event that the debug Android Activity delivers.
+const native=detail=>windowListeners['bungbung-simulation']({detail});
+const savedBeforeNative=storage.get('bungbung-v1');
+for(let scene=1;scene<=10;scene++){
+ native({scene});
+ assert.match(node('#data-source').textContent,/ADB 모의/);
+ if(scene===2||scene===7)assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
+ if(scene===3)assert.match(node('#screen-body').innerHTML,/배가 고파요/);
+ if(scene===4)assert.match(node('#screen-body').innerHTML,/냠냠/);
+ if(scene===5)assert.match(node('#screen-body').innerHTML,/성장했어요/);
+ if(scene===8)assert.match(node('#screen-body').innerHTML,/차량 상태를 확인/);
+ if(scene===10)assert.match(node('#screen-body').innerHTML,/오늘도 함께 달렸어요/);
+}
+native({patch:{gear:'D',ignition:'ON',uxRestricted:false}});
+assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
+native({patch:{gear:'P',uxRestricted:null}});
+assert.match(node('#screen-body').innerHTML,/차량 상태를 확인/);
+assert.equal(storage.get('bungbung-v1'),savedBeforeNative,'native simulation preserves saved pet');
+node('#demo-return').onclick();assert.doesNotMatch(node('#data-source').textContent,/ADB/);
+
 // Read/write failures used to crash before the first render through bootstrap code.
 globalThis.localStorage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
 await import('../dist/js/hmi-app.js?storage-denied');
