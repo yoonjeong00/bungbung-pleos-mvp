@@ -12,14 +12,14 @@ class Element {
 }
 const nodes=new Map();
 const node=key=>{if(!nodes.has(key))nodes.set(key,new Element());return nodes.get(key);};
-const previews=['home','growth','badges','closet','recovery','summary','rain'].map(view=>Object.assign(new Element(),{dataset:{preview:view}}));
+const previews=['home','growth','badges','closet','recovery','summary','rain','hungry','tire','yellow','red'].map(view=>Object.assign(new Element(),{dataset:{preview:view}}));
 const documentListeners={};const windowListeners={};
 globalThis.document={hidden:false,body:node('body'),querySelector:node,querySelectorAll(selector){if(selector==='[data-preview]')return previews;if(selector==='.room-stage .bubble')return [...node('.room-stage').children];return [];},createElement:()=>new Element(),addEventListener:(type,fn)=>documentListeners[type]=fn};
 globalThis.window={addEventListener:(type,fn)=>windowListeners[type]=fn};
 globalThis.location={search:'?android=1'};
 node('#manual').elements=Object.fromEntries(['gear','ignition','odometerKm','rangeRemainingKm','outsideTempC','tripDistanceKm','tripTimeMin','uxRestricted'].map(k=>[k,{value:''}]));
 let formValues={};globalThis.FormData=class{get(k){return formValues[k];}};
-const saved={...initial(),hat:'scarf',badges:['first'],vehicleSnapshot:{...baseline(),odometerKm:10025}};
+const saved={...initial(),onboardingComplete:true,hat:'scarf',badges:['first'],vehicleSnapshot:{...baseline(),odometerKm:10025}};
 const storage=new Map([['bungbung-v1',JSON.stringify(saved)]]);
 globalThis.localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};
 await import('../dist/js/hmi-app.js');
@@ -70,7 +70,7 @@ for(let scene=1;scene<=10;scene++){
  native({scene});
  assert.match(node('#data-source').textContent,/ADB 모의/);
  if(scene===2||scene===7)assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
- if(scene===3)assert.match(node('#screen-body').innerHTML,/배가 고파요/);
+ if(scene===3)assert.match(node('#screen-body').innerHTML,/주행 가능 거리가 부족해요/);
  if(scene===4)assert.match(node('#screen-body').innerHTML,/냠냠/);
  if(scene===5)assert.match(node('#screen-body').innerHTML,/성장했어요/);
  if(scene===8)assert.match(node('#screen-body').innerHTML,/차량 상태를 확인/);
@@ -92,9 +92,49 @@ native({scene:1});node('#pet-name').value='보리';click('welcome-start');
 assert.match(node('#screen-body').innerHTML,/보리와 잠시/);
 node('#demo-return').onclick();assert.match(node('#screen-body').innerHTML,/별이와 잠시/);
 
+// End-to-end simulated tour: explicit confirmation, no dead end after S5.
+for(let i=1;i<=5;i++){
+ native({scene:i});
+ if(i===1){assert.match(node('#screen-body').innerHTML,/우리의 첫 드라이브/);node('#pet-name').value='동행';click('welcome-start');}
+ if(i===2)assert.match(node('#screen-body').innerHTML,/toto-departure.webp/);
+ if(i===3)assert.match(node('#screen-body').innerHTML,/주행 가능 거리가 부족해요/);
+ if(i===4){assert.match(node('#screen-body').innerHTML,/냠냠/);click('confirm');assert.match(node('#screen-body').innerHTML,/동행과 잠시/);}
+ if(i===5){assert.match(node('#screen-body').innerHTML,/어린이 토토로 성장/);click('confirm');assert.match(node('#screen-body').innerHTML,/Lv.2 어린이/);}
+}
+// A queued click on a detached old confirmation button must not acknowledge a new card.
+native({scene:4});
+const recoveryBefore=node('#screen-body').innerHTML;
+node('#screen-body').listeners.click({target:{closest:()=>({dataset:{action:'confirm'},isConnected:false})}});
+assert.equal(node('#screen-body').innerHTML,recoveryBefore,'detached double-click is ignored');
+click('confirm');
+click('summary');assert.match(node('#screen-body').innerHTML,/오늘도 함께 달렸어요/);click('confirm');assert.match(node('#screen-body').innerHTML,/app-tabs/);
+click('rename');node('#pet-name').value='저장안함';click('back');assert.doesNotMatch(node('#screen-body').innerHTML,/저장안함/);
+previews.find(x=>x.dataset.preview==='closet').onclick();
+node('#screen-body').listeners.click({target:{closest:()=>({dataset:{category:'방'}})}});
+assert.match(node('#screen-body').innerHTML,/방 꾸미기 · 준비 중/);assert.doesNotMatch(node('#screen-body').innerHTML,/data-action="apply"/);
+click('cancel');assert.match(node('#screen-body').innerHTML,/app-tabs/);
+node('#demo-return').onclick();
+
+const warningSaved=storage.get('bungbung-v1');
+// Team warning scenes reuse the real HMI handler and isolated demo lifecycle.
+for(const [view,asset] of [['hungry','hungry'],['tire','hurt'],['yellow','worried']]){
+ previews.find(x=>x.dataset.preview===view).onclick();
+ assert.match(node('#screen-body').innerHTML,new RegExp('bungbung_child_'+asset+'\\.png'));
+ assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
+}
+previews.find(x=>x.dataset.preview==='red').onclick();
+assert.match(node('#screen-body').innerHTML,/critical-warning/);
+assert.doesNotMatch(node('#screen-body').innerHTML,/drive-pet|drive-message|app-tabs|departure-art/);
+manual({gear:'P'});assert.match(node('#screen-body').innerHTML,/critical-warning/,'red warning also blocks parked interaction');
+node('#demo-return').onclick();assert.doesNotMatch(node('#screen-body').innerHTML,/critical-warning/,'old saved snapshots clear mock warnings on restore');
+assert.equal(storage.get('bungbung-v1'),warningSaved,'warning previews preserve saved state');
+console.log('Team warning HMI: 3 artwork routes, critical priority, parked block, return isolation passed');
+
 // Read/write failures used to crash before the first render through bootstrap code.
 globalThis.localStorage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
 await import('../dist/js/hmi-app.js?storage-denied');
-assert.match(node('#screen-body').innerHTML,/토토와 잠시/);
+assert.match(node('#screen-body').innerHTML,/우리의 첫 드라이브/,'fresh or inaccessible storage begins with welcome');
+node('#pet-name').value='';click('welcome-start');assert.match(node('#screen-body').innerHTML,/토토와 잠시/,'blank name falls back and welcome can finish');
 windowListeners.pagehide();
 console.log('PASS actual HMI wiring: preview/scenario/manual isolation, restore, S7 stop, deferred growth, motion cancellation, Android query, denied storage');
+

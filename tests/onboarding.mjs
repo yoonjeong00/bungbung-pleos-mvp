@@ -6,8 +6,16 @@ assert.equal(Array.from(cleanPetName('가'.repeat(20))).length,12);
 assert.equal(cleanPetName('<별이>'),'별이');
 const html=welcome('별이',()=>'<svg></svg>');
 assert.match(html,/id="pet-name"/);assert.match(html,/data-action="welcome-start"/);
-assert.match(html,/onboarding-hero.webp/);assert.doesNotMatch(welcome('" onclick="bad',()=>''),/value="" onclick=/);
+assert.match(html,/extracted\/welcome-hero.webp/);assert.doesNotMatch(welcome('" onclick="bad',()=>''),/value="" onclick=/);
 let value=null;globalThis.localStorage={setItem:(k,v)=>value=v,getItem:()=>value};
 const state=initial();state.petName='보리';save(state);assert.equal(load().petName,'보리');
 value='{"hat":"cap"}';assert.equal(load().petName,'토토');
 console.log('PASS onboarding: name validation, escaping, saved name restoration, legacy migration');
+
+assert.match(welcome('별이',()=>'',{rename:true}),/이름 저장/);
+assert.match(welcome('별이',()=>'',{rename:true}),/data-action="back"/);
+assert.match(html,/maxlength="12"/);
+assert.doesNotMatch(html,/<image|viewBox/);
+
+assert.match(welcome('동행',()=>''),/동행과 함께 시작하기/);
+assert.match(welcome('동행',()=>''),/동행이야/);

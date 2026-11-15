@@ -73,14 +73,100 @@ body.android-app .app-demo-bar{position:relative;z-index:60;min-height:32px;box-
 .welcome-help{font-size:clamp(11px,1.2cqw,16px);text-align:center;color:#656174;margin:0}
 .rename-button{margin-left:auto;padding:6px 10px;border:1px solid #d3d2e2;border-radius:10px;background:#fff;color:#5b5974;font-size:12px;white-space:nowrap}
 @media(max-width:700px){.welcome-layout{grid-template-columns:1fr;overflow:visible}.welcome-visual img{max-height:340px;flex:none}.welcome-content{gap:14px}.welcome-features{gap:10px}.welcome-features li{padding:12px}.welcome-name{gap:8px}}
+/* Match approved onboarding: shared background, original art, bold hierarchy. */
+@font-face{font-family:WelcomeBold;src:url('hmi-assets/welcome-bold.woff') format('woff');font-style:normal;font-weight:700 900;font-display:swap}
+body.android-app .app-window:has(.welcome-layout){background:radial-gradient(ellipse at 30% 45%,#f8f6ff,#efedfc 78%);padding:1.6cqw 2cqw}
+.welcome-layout{background:none;border-radius:0;padding:0;grid-template-columns:53% 45%;gap:2%;overflow:auto}
+.welcome-visual{justify-content:space-between}
+.welcome-visual h1{font-family:WelcomeBold,'Noto Sans KR',sans-serif;font-weight:900;font-size:clamp(22px,3.1cqw,46px);letter-spacing:-.045em;line-height:1.2;margin-top:.6cqw;white-space:nowrap}
+.welcome-scene{flex:1;min-height:0;width:108%;margin-left:-4%;display:flex;align-items:center;mask-image:linear-gradient(to right,transparent,#000 3%,#000 96%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 3%,#000 96%,transparent)}
+.welcome-art{display:block;width:100%;height:100%;overflow:hidden}
+.welcome-art-hero{max-height:100%;mask-image:linear-gradient(to bottom,transparent,#000 5%,#000 95%,transparent);-webkit-mask-image:linear-gradient(to bottom,transparent,#000 5%,#000 95%,transparent)}
+.welcome-caption{font-family:WelcomeBold,sans-serif;font-weight:700;font-size:clamp(13px,1.5cqw,22px);padding:.65cqw 2cqw;border:1px solid #fff;background:linear-gradient(#fff9,#e5e2fbaa);box-shadow:0 3px 9px #9b94c21c}
+.welcome-content{justify-content:flex-start;padding:2.2cqw 0 1cqw;gap:1.4cqw}
+.welcome-content h2{font-family:WelcomeBold,'Noto Sans KR',sans-serif;font-size:clamp(29px,4.1cqw,60px);font-weight:900;letter-spacing:-.045em;line-height:1.25}
+.welcome-content h2 span{color:#1426ff}
+.welcome-intro{font-size:clamp(17px,2.1cqw,30px);font-weight:500;line-height:1.5;margin:0 0 1cqw}
+.welcome-features{gap:1cqw;margin:0 0 1.8cqw}
+.welcome-features li{min-height:5.4cqw;box-sizing:border-box;padding:.7cqw 1.5cqw;gap:1.6cqw;border-radius:2.6cqw;background:linear-gradient(125deg,#ffffffb0,#f6f4ffb0);border:1px solid #fff9;box-shadow:0 6px 12px #8780ac22;font-size:clamp(14px,1.75cqw,25px);font-weight:700}
+.welcome-symbol{width:10cqw;height:5.7cqw;min-width:65px;flex-shrink:0;padding-right:1.3cqw;position:relative;border:0}
+.welcome-symbol:after{content:'';position:absolute;right:0;top:25%;height:50%;width:1px;background:#c8c3df}
+.welcome-symbol .welcome-art{mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent)}
+.welcome-name{font-size:clamp(15px,1.7cqw,24px);gap:1.5cqw}
+.welcome-name input{font-size:clamp(17px,2cqw,29px);font-weight:600;min-height:4.7cqw;padding:.9cqw 1.7cqw;border-radius:1.6cqw}
+body.android-app .primary.welcome-start,.welcome-start{margin-top:.9cqw;min-height:6.2cqw;border-radius:3.1cqw;font-family:WelcomeBold,sans-serif;font-size:clamp(19px,2.35cqw,34px);font-weight:800;background:linear-gradient(120deg,#285eff,#1426ff);border:1px solid #ffffffa0;box-shadow:inset 0 2px 3px #ffffff50,0 4px 8px #3336ff18}
+.welcome-start .icon{width:2.8cqw;height:2.8cqw;min-width:24px;min-height:24px}
+.welcome-help{font-size:clamp(12px,1.5cqw,21px)}
+@media(max-width:700px){.welcome-layout{grid-template-columns:1fr;gap:18px}.welcome-visual h1{white-space:normal}.welcome-scene{height:390px;flex:none}.welcome-content{gap:16px}.welcome-symbol{width:72px;height:52px}.welcome-features li{min-height:72px;padding:10px 16px;border-radius:22px}.welcome-name input{min-height:48px}.welcome-start,body.android-app .primary.welcome-start{min-height:56px;border-radius:28px}.welcome-caption{padding:8px 20px}}
 
-/* 붕붕이 상황별 정지 이미지 (주행 중 오른쪽 창) */
-.drive-character>img.drive-pet{left:0;width:85%;object-fit:contain;mask-image:none}
-/* 빨간 경고: 캐릭터 없이 숫자만 크게 */
-.drive-character.numbers-only .drive-stats{position:static;height:100%;justify-content:center;align-items:center;gap:2cqw;font-size:3cqw;font-weight:600}
-.drive-character.numbers-only .drive-stats .icon{width:3cqw;height:3cqw}
-/* 상태 표시 글자 16px, 아이콘도 글자에 맞춤 */
-.drive-brand .weather-label{font-size:16px;line-height:1.5;white-space:nowrap}
-.drive-brand .weather-label .icon{width:20px;height:20px;flex:none}
-/* 오른쪽 창 오른쪽 아래 "모의 데이터" 표식: 대사 카드 아래 별도 줄이라 겹치지 않음 */
-.drive-mock{align-self:flex-end;margin-top:.5cqw;font-size:12px;line-height:1.5;color:#5f6470}
+.welcome-features li,.welcome-name label{font-family:WelcomeBold,sans-serif}
+/* Independent raster regions: never render neighbouring reference UI. */
+.hmi-art{object-fit:contain}
+body.android-app .screen{overflow:hidden}
+body.android-app .app-window{overflow:hidden;background:#f0f2fa}
+body.android-app .home-layout{grid-template-rows:minmax(0,1fr);min-height:0;overflow:hidden}
+body.android-app .room-stage{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+body.android-app .room-stage>.room-image{min-height:0;object-position:center}
+body.android-app .room-level{position:static;margin:8px;min-width:0}
+body.android-app .home-side{display:grid;grid-template-rows:auto auto minmax(0,1fr);min-height:0}
+body.android-app .closet-shortcut{display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:8px;min-height:0;overflow:hidden}
+body.android-app .mini-items{display:flex;height:100%;min-height:0;overflow:hidden;align-items:center}
+body.android-app .mini-items .art{width:50%;height:100%;min-width:0;min-height:0;object-fit:contain;mask-image:none;-webkit-mask-image:none}
+body.android-app .closet-shortcut small{font-size:clamp(11px,1cqw,15px);line-height:1.4;overflow-wrap:anywhere}
+body.android-app .closet-shortcut .primary{position:static;min-height:44px;margin:0;flex-shrink:0}
+body.android-app .room-distance{backdrop-filter:none;background:#fffffff5}
+@media(max-width:700px){
+ body.android-app .screen{overflow:auto}
+ body.android-app .app-window{height:auto;min-height:100%}
+ body.android-app .home-layout{grid-template-rows:minmax(240px,1fr) auto;overflow:visible;flex:none}
+ body.android-app .home-side{grid-template-rows:auto auto;overflow:visible}
+ body.android-app .closet-shortcut{grid-template-columns:1fr auto;grid-template-rows:auto}
+ body.android-app .mini-items{display:none}
+}
+/* Opt-in debug rendering compatibility, scoped to this WebView. */
+#render-build{font-size:11px;white-space:nowrap;color:#515b77}
+body.android-app.render-compat .app-window *{animation:none!important;transition:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;mix-blend-mode:normal!important;filter:none!important;box-shadow:none!important}
+body.android-app.render-compat .art,body.android-app.render-compat .welcome-art,body.android-app.render-compat .welcome-scene{mask-image:none!important;-webkit-mask-image:none!important}
+.sdk-distance-panel{display:flex;gap:18px;align-items:center;flex:none;padding:9px 16px;background:#f6f9ff;border-bottom:1px solid #cbd5e4;color:#334155;font-size:13px}
+.sdk-distance-panel>div{min-width:0}.sdk-distance-panel b{display:block;font-size:12px}.sdk-distance-panel strong{font-size:24px;color:#2446df}.sdk-distance-panel small{display:block;font-size:11px;line-height:1.5;overflow-wrap:anywhere}.sdk-distance-panel[data-state=error],.sdk-distance-panel[data-state=stale]{background:#fff5e8}
+
+/* Departure illustration: static, uncropped, separate from live vehicle values. */
+.drive-character.departure-scene{display:flex;flex-direction:column;gap:.6cqw;overflow:hidden}
+.drive-character>.departure-art{display:block;width:100%;height:0;flex:1;min-height:0;object-fit:contain;object-position:center;border-radius:1.5cqw}
+.drive-character.departure-scene>.drive-stats{position:static;display:flex;flex-direction:row;justify-content:flex-end;gap:1.5cqw;flex-shrink:0;padding:.4cqw .8cqw;font-size:1.3cqw}
+
+/* Submission QA: keep controls reachable when SDK rows or keyboard reduce height. */
+body.android-app .screen{overflow:auto;overscroll-behavior:contain}
+body.android-app .device{overflow:hidden}
+body.android-app .app-window{overflow:auto}
+body.android-app .event-content{min-height:0;overflow:auto;justify-content:flex-start;padding:2px 2px 8px}
+body.android-app .event-content>.primary,body.android-app .event-content>.actions{margin-top:auto;flex-shrink:0}
+body.android-app .event-content .primary,body.android-app .event-content .secondary{min-height:44px}
+body.android-app .event-picture .art{object-fit:contain}
+body.android-app .room-stage>.room-image{object-fit:contain;background:#f0f2fa}
+body.android-app .drive-app{min-height:300px}
+body.android-app .drive-message{flex-shrink:0;min-height:44px}
+body.android-app .drive-brand .weather-label{font-size:clamp(12px,.9cqw,18px)}
+body.android-app .drive-stats,body.android-app .drive-character.departure-scene>.drive-stats{font-size:clamp(14px,1.3cqw,22px)}
+/* Actual image files replace clipped full-screen reference SVGs. */
+.welcome-art{object-fit:contain;min-height:0}
+.welcome-symbol>.welcome-art{flex:none;width:100%;height:100%;border-radius:0}
+.welcome-scene>.welcome-art-hero{width:100%;height:100%;min-height:180px;object-fit:contain}
+.welcome-content>*{flex-shrink:0}
+.welcome-layout{scroll-padding-block:16px}
+#pet-name{scroll-margin-block:24px}
+body.android-app .wardrobe-message{font-size:clamp(11px,.85cqw,15px);line-height:1.4;margin:5px 8px}
+@media(max-width:700px){
+ body.android-app .home-side{grid-template-columns:1fr 1fr}
+ body.android-app .closet-shortcut small{font-size:12px}
+ body.android-app .drive-brand{height:auto;min-height:44px;font-size:16px}
+ body.android-app .drive-brand>.art{width:32px;height:32px}
+ .welcome-scene>.welcome-art-hero{min-height:0}
+}
+
+/* Team warning scenes: static imagery and live text, no UI baked into art. */
+.drive-character.mood-scene{display:flex;flex-direction:column;gap:8px}
+.drive-character.mood-scene>img.drive-pet{position:static;display:block;width:100%;height:0;flex:1;min-height:0;object-fit:contain;mask-image:none;-webkit-mask-image:none;mix-blend-mode:normal}
+.drive-character.mood-scene>.drive-stats{position:static;display:flex;flex-direction:row;justify-content:flex-end;font-size:clamp(14px,1.3cqw,22px);gap:16px;flex-shrink:0}
+.critical-warning{grid-column:2/-1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:20px;padding:32px;background:#fff4f2;color:#67231c;min-height:280px;height:100%}
+.critical-warning h1{font-size:clamp(24px,3cqw,48px);margin:0}.critical-warning p{font-size:clamp(18px,1.7cqw,28px);line-height:1.6;margin:0}.critical-warning small{font-size:14px;line-height:1.6}
