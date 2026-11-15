@@ -123,3 +123,7 @@ body.android-app .room-distance{backdrop-filter:none;background:#fffffff5}
  body.android-app .closet-shortcut{grid-template-columns:1fr auto;grid-template-rows:auto}
  body.android-app .mini-items{display:none}
 }
+/* Opt-in debug rendering compatibility, scoped to this WebView. */
+#render-build{font-size:11px;white-space:nowrap;color:#515b77}
+body.android-app.render-compat .app-window *{animation:none!important;transition:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;mix-blend-mode:normal!important;filter:none!important;box-shadow:none!important}
+body.android-app.render-compat .art,body.android-app.render-compat .welcome-art,body.android-app.render-compat .welcome-scene{mask-image:none!important;-webkit-mask-image:none!important}

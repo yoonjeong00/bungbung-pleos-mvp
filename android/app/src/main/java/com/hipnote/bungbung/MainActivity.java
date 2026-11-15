@@ -12,6 +12,7 @@ import androidx.webkit.WebViewClientCompat;
 public class MainActivity extends Activity {
  private WebView web;
  private boolean pageReady=false;
+ private boolean softwareRendering=false;
  private JSONObject pendingSimulation;
  private void acceptSimulation(Intent intent){
   if(!BuildConfig.DEBUG || intent==null || !"com.hipnote.bungbung.SIMULATE".equals(intent.getAction()))return;
@@ -42,6 +43,18 @@ public class MainActivity extends Activity {
   acceptSimulation(getIntent());
   WebViewAssetLoader loader = new WebViewAssetLoader.Builder().addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
   web = new WebView(this);
+  // Opt-in diagnostic workaround for emulator GPU texture corruption.
+  // Persist only in debug builds; production keeps normal rendering.
+  if(BuildConfig.DEBUG){
+   android.content.SharedPreferences prefs=getSharedPreferences("render-debug",MODE_PRIVATE);
+   if(getIntent().hasExtra("software_rendering")){
+    prefs.edit().putBoolean("software",getIntent().getBooleanExtra("software_rendering",false)).apply();
+   }
+   softwareRendering=prefs.getBoolean("software",false);
+   if(softwareRendering)web.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE,null);
+   android.util.Log.i("BungbungRender","UI r3 / software="+softwareRendering);
+  }
+  web.setBackgroundColor(android.graphics.Color.rgb(240,242,250));
   web.getSettings().setJavaScriptEnabled(true);
   web.getSettings().setDomStorageEnabled(true);
   web.getSettings().setAllowFileAccess(false);
@@ -49,7 +62,11 @@ public class MainActivity extends Activity {
   web.setWebViewClient(new WebViewClientCompat(){
    @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap favicon){pageReady=false;}
    @Override public void onPageFinished(WebView view,String url){
-    if("https://appassets.androidplatform.net/assets/index.html?android=1".equals(url)){pageReady=true;deliverSimulation();}
+    if("https://appassets.androidplatform.net/assets/index.html?android=1".equals(url)){pageReady=true;
+     if(BuildConfig.DEBUG){
+      web.evaluateJavascript("document.body.classList.toggle('render-compat',"+softwareRendering+");var badge=document.createElement('span');badge.id='render-build';badge.textContent='UI r3 · "+(softwareRendering?"호환 렌더링":"기본 렌더링")+"';document.querySelector('.app-demo-bar').appendChild(badge);",null);
+     }
+     deliverSimulation();}
    }
    @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) { return loader.shouldInterceptRequest(request.getUrl()); }
    @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return !"appassets.androidplatform.net".equals(request.getUrl().getHost()); }
