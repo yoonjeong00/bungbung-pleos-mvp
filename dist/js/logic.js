@@ -1,4 +1,4 @@
-import {cleanPetName} from './onboarding.js?v=20261115-r6';
+import {cleanPetName} from './onboarding.js?v=20261115-r7';
 // TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
 export const stages=[{name:'알',km:0},{name:'아기',km:0},{name:'어린이',km:300},{name:'청년',km:2000},{name:'어른',km:6000}];
 export const initial=()=>({petName:'토토',onboardingComplete:false,baseOdo:10000,hat:'none',badges:[],badgeEarnedAt:{},items:['headphones','cap','scarf'],ackStage:1,pendingGrowthStage:1,maxDistanceKm:0,queuedEvents:[],activeEvent:null,activeEventData:null,lowRangeKm:null,refuelDetails:null,vehicleSnapshot:null});
