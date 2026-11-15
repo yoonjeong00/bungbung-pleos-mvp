@@ -27,7 +27,7 @@ export const scenes=[
 ['S3','배고픔','남은 거리 49 km',{gear:'D',uxRestricted:false,rangeRemainingKm:49},null],
 ['S4','주유 회복','주차 후 배부른 붕붕이',{gear:'P',rangeRemainingKm:620},'recovery'],
 ['S5','첫 성장','누적 300 km 달성',{gear:'P',odometerKm:10300,tripDistanceKm:32,tripTimeMin:41},'growth'],
-['S6','겨울 아침','목도리를 두른 친구',{gear:'P',outsideTempC:-3,uxRestricted:false,dataStatus:{}},null],
+['S6','겨울 아침','외기온 -3°C 모의 입력 · 자동 착용 준비 중',{gear:'P',outsideTempC:-3,uxRestricted:false,dataStatus:{}},null],
 ['S7','신호 대기','D에서는 상호작용 불가',{gear:'D',tripTimeMin:44,uxRestricted:false},null],
 ['S8','제한 신호 없음','보수적으로 화면 제한',{gear:'P',uxRestricted:null},null],
 ['S9','미지원 데이터','연료 정보를 추정하지 않음',{gear:'P',uxRestricted:false,rangeRemainingKm:null,dataStatus:{rangeRemainingKm:'UNSUPPORTED'}},null],

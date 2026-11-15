@@ -58,7 +58,7 @@ public class MainActivity extends Activity {
    }
    softwareRendering=prefs.getBoolean("software",false);
    if(softwareRendering)web.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE,null);
-   android.util.Log.i("BungbungRender","UI r4 · SDK / software="+softwareRendering);
+   android.util.Log.i("BungbungRender","UI r5 · SDK / software="+softwareRendering);
   }
   web.setBackgroundColor(android.graphics.Color.rgb(240,242,250));
   web.getSettings().setJavaScriptEnabled(true);
@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
    @Override public void onPageFinished(WebView view,String url){
     if("https://appassets.androidplatform.net/assets/index.html?android=1".equals(url)){pageReady=true;
      if(BuildConfig.DEBUG){
-      web.evaluateJavascript("document.body.classList.toggle('render-compat',"+softwareRendering+");var badge=document.createElement('span');badge.id='render-build';badge.textContent='UI r4 · SDK · "+(softwareRendering?"호환 렌더링":"기본 렌더링")+"';document.querySelector('.app-demo-bar').appendChild(badge);",null);
+      web.evaluateJavascript("document.body.classList.toggle('render-compat',"+softwareRendering+");var badge=document.getElementById('render-build')||document.createElement('span');badge.id='render-build';badge.textContent='UI r5 · "+BuildConfig.BUILD_REVISION+" · SDK · "+(softwareRendering?"호환 렌더링":"기본 렌더링")+"';document.querySelector('.app-demo-bar').appendChild(badge);",null);
      }
      sendVehiclePacket();
      deliverSimulation();}

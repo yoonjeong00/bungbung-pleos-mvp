@@ -19,7 +19,7 @@ globalThis.window={addEventListener:(type,fn)=>windowListeners[type]=fn};
 globalThis.location={search:'?android=1'};
 node('#manual').elements=Object.fromEntries(['gear','ignition','odometerKm','rangeRemainingKm','outsideTempC','tripDistanceKm','tripTimeMin','uxRestricted'].map(k=>[k,{value:''}]));
 let formValues={};globalThis.FormData=class{get(k){return formValues[k];}};
-const saved={...initial(),hat:'scarf',badges:['first'],vehicleSnapshot:{...baseline(),odometerKm:10025}};
+const saved={...initial(),onboardingComplete:true,hat:'scarf',badges:['first'],vehicleSnapshot:{...baseline(),odometerKm:10025}};
 const storage=new Map([['bungbung-v1',JSON.stringify(saved)]]);
 globalThis.localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};
 await import('../dist/js/hmi-app.js');
@@ -92,9 +92,33 @@ native({scene:1});node('#pet-name').value='보리';click('welcome-start');
 assert.match(node('#screen-body').innerHTML,/보리와 잠시/);
 node('#demo-return').onclick();assert.match(node('#screen-body').innerHTML,/별이와 잠시/);
 
+// End-to-end simulated tour: explicit confirmation, no dead end after S5.
+for(let i=1;i<=5;i++){
+ native({scene:i});
+ if(i===1){assert.match(node('#screen-body').innerHTML,/우리의 첫 드라이브/);node('#pet-name').value='동행';click('welcome-start');}
+ if(i===2)assert.match(node('#screen-body').innerHTML,/toto-departure.webp/);
+ if(i===3)assert.match(node('#screen-body').innerHTML,/배가 고파요/);
+ if(i===4){assert.match(node('#screen-body').innerHTML,/냠냠/);click('confirm');assert.match(node('#screen-body').innerHTML,/동행과 잠시/);}
+ if(i===5){assert.match(node('#screen-body').innerHTML,/어린이 토토로 성장/);click('confirm');assert.match(node('#screen-body').innerHTML,/Lv.2 어린이/);}
+}
+// A queued click on a detached old confirmation button must not acknowledge a new card.
+native({scene:4});
+const recoveryBefore=node('#screen-body').innerHTML;
+node('#screen-body').listeners.click({target:{closest:()=>({dataset:{action:'confirm'},isConnected:false})}});
+assert.equal(node('#screen-body').innerHTML,recoveryBefore,'detached double-click is ignored');
+click('confirm');
+click('summary');assert.match(node('#screen-body').innerHTML,/오늘도 함께 달렸어요/);click('confirm');assert.match(node('#screen-body').innerHTML,/app-tabs/);
+click('rename');node('#pet-name').value='저장안함';click('back');assert.doesNotMatch(node('#screen-body').innerHTML,/저장안함/);
+previews.find(x=>x.dataset.preview==='closet').onclick();
+node('#screen-body').listeners.click({target:{closest:()=>({dataset:{category:'방'}})}});
+assert.match(node('#screen-body').innerHTML,/방 꾸미기 · 준비 중/);assert.doesNotMatch(node('#screen-body').innerHTML,/data-action="apply"/);
+click('cancel');assert.match(node('#screen-body').innerHTML,/app-tabs/);
+node('#demo-return').onclick();
+
 // Read/write failures used to crash before the first render through bootstrap code.
 globalThis.localStorage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
 await import('../dist/js/hmi-app.js?storage-denied');
-assert.match(node('#screen-body').innerHTML,/토토와 잠시/);
+assert.match(node('#screen-body').innerHTML,/우리의 첫 드라이브/,'fresh or inaccessible storage begins with welcome');
+node('#pet-name').value='';click('welcome-start');assert.match(node('#screen-body').innerHTML,/토토와 잠시/,'blank name falls back and welcome can finish');
 windowListeners.pagehide();
 console.log('PASS actual HMI wiring: preview/scenario/manual isolation, restore, S7 stop, deferred growth, motion cancellation, Android query, denied storage');

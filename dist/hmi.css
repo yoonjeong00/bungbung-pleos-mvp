@@ -134,3 +134,32 @@ body.android-app.render-compat .art,body.android-app.render-compat .welcome-art,
 .drive-character.departure-scene{display:flex;flex-direction:column;gap:.6cqw;overflow:hidden}
 .drive-character>.departure-art{display:block;width:100%;height:0;flex:1;min-height:0;object-fit:contain;object-position:center;border-radius:1.5cqw}
 .drive-character.departure-scene>.drive-stats{position:static;display:flex;flex-direction:row;justify-content:flex-end;gap:1.5cqw;flex-shrink:0;padding:.4cqw .8cqw;font-size:1.3cqw}
+
+/* Submission QA: keep controls reachable when SDK rows or keyboard reduce height. */
+body.android-app .screen{overflow:auto;overscroll-behavior:contain}
+body.android-app .device{overflow:hidden}
+body.android-app .app-window{overflow:auto}
+body.android-app .event-content{min-height:0;overflow:auto;justify-content:flex-start;padding:2px 2px 8px}
+body.android-app .event-content>.primary,body.android-app .event-content>.actions{margin-top:auto;flex-shrink:0}
+body.android-app .event-content .primary,body.android-app .event-content .secondary{min-height:44px}
+body.android-app .event-picture .art{object-fit:contain}
+body.android-app .room-stage>.room-image{object-fit:contain;background:#f0f2fa}
+body.android-app .drive-app{min-height:300px}
+body.android-app .drive-message{flex-shrink:0;min-height:44px}
+body.android-app .drive-brand .weather-label{font-size:clamp(12px,.9cqw,18px)}
+body.android-app .drive-stats,body.android-app .drive-character.departure-scene>.drive-stats{font-size:clamp(14px,1.3cqw,22px)}
+/* Actual image files replace clipped full-screen reference SVGs. */
+.welcome-art{object-fit:contain;min-height:0}
+.welcome-symbol>.welcome-art{flex:none;width:100%;height:100%;border-radius:0}
+.welcome-scene>.welcome-art-hero{width:100%;height:100%;min-height:180px;object-fit:contain}
+.welcome-content>*{flex-shrink:0}
+.welcome-layout{scroll-padding-block:16px}
+#pet-name{scroll-margin-block:24px}
+body.android-app .wardrobe-message{font-size:clamp(11px,.85cqw,15px);line-height:1.4;margin:5px 8px}
+@media(max-width:700px){
+ body.android-app .home-side{grid-template-columns:1fr 1fr}
+ body.android-app .closet-shortcut small{font-size:12px}
+ body.android-app .drive-brand{height:auto;min-height:44px;font-size:16px}
+ body.android-app .drive-brand>.art{width:32px;height:32px}
+ .welcome-scene>.welcome-art-hero{min-height:0}
+}

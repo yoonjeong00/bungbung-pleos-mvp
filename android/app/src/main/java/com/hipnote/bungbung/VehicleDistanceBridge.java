@@ -19,10 +19,10 @@ final class VehicleDistanceBridge {
  private Vehicle vehicle;
  private Odometer odometer;
  private DistanceDrivenListener listener;
- private int generation=0,updates=0,readSequence=0;
+ private int generation=0,updates=0,valueChanges=0,readSequence=0;
  private boolean supported=false,connected=false,reading=false;
  private String access="UNKNOWN";
- private Float distance=null;
+ private Float distance=null,lastObservedDistance=null;
  private long receivedAt=0;
  VehicleDistanceBridge(Context context,Sink sink){this.context=context;this.sink=sink;}
  private void emit(String state,String message,String via){
@@ -31,13 +31,13 @@ final class VehicleDistanceBridge {
    p.put("source","pleos-sdk");p.put("state",state);p.put("message",message);
    p.put("connected",connected);p.put("supported",supported);p.put("access",access);
    p.put("odometerKm",distance==null?JSONObject.NULL:distance);p.put("receivedAt",receivedAt);
-   p.put("updates",updates);p.put("via",via);sink.accept(p);
+   p.put("updates",updates);p.put("valueChanges",valueChanges);p.put("via",via);sink.accept(p);
    android.util.Log.i("BungbungVehicle",p.toString());
   }catch(Exception e){android.util.Log.e("BungbungVehicle","Status delivery failed",e);}
  }
  private void fail(String phase,Exception error){distance=null;emit("error",phase+": "+error.getClass().getSimpleName()+" · "+error.getMessage(),"error");}
  void start(){
-  stop();final int epoch=++generation;updates=0;receivedAt=0;access="UNKNOWN";
+  stop();final int epoch=++generation;updates=0;valueChanges=0;lastObservedDistance=null;receivedAt=0;access="UNKNOWN";
   emit("connecting","차량 서비스 연결 및 누적 거리 지원 조회 중","capability");
   try{
    vehicle=new Vehicle(context);vehicle.initialize();odometer=vehicle.getOdometer();
@@ -71,13 +71,15 @@ final class VehicleDistanceBridge {
  private void read(final int epoch){
   if(reading||epoch!=generation||odometer==null||!supported)return;
   reading=true;final int request=++readSequence,listenerUpdates=updates;
-  main.postDelayed(()->{if(epoch==generation&&request==readSequence&&reading){reading=false;++readSequence;distance=null;emit("error","거리 조회 응답 시간 초과","timeout");}},10000);
+  main.postDelayed(()->{if(epoch==generation&&request==readSequence&&reading){reading=false;++readSequence;if(listenerUpdates==updates){distance=null;emit("error","거리 조회 응답 시간 초과","timeout");}}},10000);
   try{odometer.getCurrentDistanceDriven(value->{main.post(()->{if(epoch==generation&&request==readSequence){reading=false;if(listenerUpdates==updates)sample(value,"read");}});return Unit.INSTANCE;},error->{main.post(()->{if(epoch==generation&&request==readSequence){reading=false;if(listenerUpdates==updates)fail("거리 조회",error);}});return Unit.INSTANCE;});}
   catch(Exception e){reading=false;fail("거리 조회",e);}
  }
  private void sample(Float value,String via){
+  if("listener".equals(via))updates++;
   if(value==null||Float.isNaN(value)||Float.isInfinite(value)||value<0){distance=null;emit("unavailable","거리 값 미수신 또는 유효하지 않음",via);return;}
-  distance=value;receivedAt=System.currentTimeMillis();if("listener".equals(via))updates++;
+  if(lastObservedDistance!=null&&Float.compare(lastObservedDistance,value)!=0)valueChanges++;
+  lastObservedDistance=value;distance=value;receivedAt=System.currentTimeMillis();
   emit("live","누적 거리 수신 완료",via);
  }
  void stop(){

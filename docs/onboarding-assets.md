@@ -1,6 +1,6 @@
 # 첫 만남 화면 적용
 
-- `hmi-assets/welcome-reference.webp`: 승인된 원시안 보존. SVG viewport로 토토 장면과 3D 아이콘 3개를 표시한다. 새 캐릭터를 생성하지 않았다.
+- `hmi-assets/welcome-reference.webp`: 승인된 원시안 보존. 최종 점검에서 extracted/welcome-{hero,growth,fuel,closet}.webp 4개로 분리해 표시한다. 전체 시안 SVG는 더 이상 렌더링하지 않는다. 새 캐릭터를 생성하지 않았다.
 - `welcome-bold.woff`: Noto Sans CJK KR Bold의 화면 문구 부분집합. 라이선스는 welcome-font-license.txt.
 - `js/onboarding.js`: 제목, 기능 소개 3개, 이름 입력, 시작 버튼을 실제 HTML로 렌더링. 기능 아이콘은 원시안의 3D 이미지를 사용.
 - 토토/알/배경은 하나의 정적 장면이다. 독립 캐릭터 애니메이션용 레이어는 아니다.

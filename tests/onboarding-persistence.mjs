@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {initial,load,save} from '../dist/js/logic.js';
+import {DemoSession} from '../dist/js/demo-session.js';
+let raw=null;globalThis.localStorage={getItem:()=>raw,setItem:(key,value)=>raw=value};
+assert.equal(initial().onboardingComplete,false);
+assert.equal(load().onboardingComplete,false);
+raw='{}';assert.equal(load().onboardingComplete,false);
+raw='invalid';assert.equal(load().onboardingComplete,false);
+raw=JSON.stringify({baseOdo:10000,ackStage:3,hat:'cap',petName:'기존친구'});
+assert.equal(load().onboardingComplete,true);assert.equal(load().petName,'기존친구');assert.equal(load().ackStage,3);
+raw=JSON.stringify({...initial(),onboardingComplete:false});assert.equal(load().onboardingComplete,false);
+const s=load();s.onboardingComplete=true;s.petName='새친구';save(s);
+assert.equal(load().onboardingComplete,true);assert.equal(load().petName,'새친구');
+const session=new DemoSession({load,save});let demo=session.leave();session.enter(demo);demo.petName='모의친구';demo.onboardingComplete=false;session.checkpoint(demo);
+assert.equal(load().petName,'새친구');assert.equal(session.leave().onboardingComplete,true);
+console.log('PASS onboarding persistence: new/legacy/completed saves and demo isolation');

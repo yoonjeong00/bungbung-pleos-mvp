@@ -13,7 +13,7 @@ Subscription and Vehicle resources release in onStop and reconnect in onStart. E
 1. Pull feat/team1-demo-session; run `bash scripts/install-mac.sh` (retains chosen rendering mode).
 2. The SDK panel should show service response, READ/READ_WRITE support and a numeric value. Do not count waiting/error/unsupported as success.
 3. In the Pleos Virtual Console change the supported cumulative odometer input, not the app's mock scenario panel. Exact available controls depend on the installed emulator.
-4. Verify the SDK number changes and `변경 알림` count increases. If only `현재 값 조회` updates, polling works but listener verification is incomplete.
+4. Verify the SDK number changes and `값 변경` count increases (the separate `알림 수신` count alone does not prove a numeric change). If only `현재 값 조회` updates, polling works but listener verification is incomplete.
 5. Background/resume the app; verify reconnection and no duplicate callbacks. Test unavailable values/disconnection and verify no fake zero or stale live claim.
 6. Logs: `$HOME/Library/Android/sdk/platform-tools/adb -s emulator-5554 logcat -d -s BungbungVehicle:I '*:S'`.
 
