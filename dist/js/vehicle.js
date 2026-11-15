@@ -1,7 +1,15 @@
 // TEAM 1: mock vehicle provider. Replace adapter, keep payload contract.
-export const baseline=()=>({uxRestricted:false,gear:'P',ignition:'ON',odometerKm:10180,tripDistanceKm:32,tripTimeMin:41,rangeRemainingKm:420,outsideTempC:18,dataStatus:{},isMock:true});
+// 붕붕이 상황 기준값 (임시값). 기준을 바꿀 때는 여기만 고친다.
+export const FUEL_THRESHOLDS=Object.freeze({
+ hungryKm:150, // 이 값 미만이면 '배고픔'
+ lowFuelKm:50, // 이 값 미만이면 '연료 부족'
+});
+// safetyWarnings 항목 형식: {id:'brake', level:'yellow'|'red', label:'브레이크 경고'}
+export const WARNING_LEVELS=Object.freeze(['yellow','red']);
+export const baseline=()=>({uxRestricted:false,gear:'P',ignition:'ON',odometerKm:10180,tripDistanceKm:32,tripTimeMin:41,rangeRemainingKm:420,outsideTempC:18,tireWarning:false,safetyWarnings:[],dataStatus:{},isMock:true});
 const numericLimits={odometerKm:[0,999999],tripDistanceKm:[0,2000],tripTimeMin:[0,1440],rangeRemainingKm:[0,1500],outsideTempC:[-40,60]};
-const enums={gear:['P','R','N','D'],ignition:['OFF','ACC','ON','START'],uxRestricted:[true,false]};
+const enums={gear:['P','R','N','D'],ignition:['OFF','ACC','ON','START'],uxRestricted:[true,false],tireWarning:[true,false]};
+const cleanWarnings=list=>Array.isArray(list)&&list.every(w=>w&&WARNING_LEVELS.includes(w.level))?list.map(w=>({id:String(w.id??''),level:w.level,label:String(w.label??'')})):null;
 export class VehicleProvider extends EventTarget {
  constructor(snapshot=null){super();this._value=baseline();this.sequence=0;this.set(snapshot||{},false)}
  get value(){return structuredClone(this._value)}
@@ -14,6 +22,10 @@ export class VehicleProvider extends EventTarget {
     next[key]=valid?v:null;next.dataStatus[key]=valid?(v===null?'LOADING':'OK'):'ERROR';next.receivedAt[key]=Date.now();
    }
    if(Object.hasOwn(patch.dataStatus||{},key))next.dataStatus[key]=['OK','LOADING','NO_PERMISSION','UNSUPPORTED','ERROR'].includes(patch.dataStatus[key])?patch.dataStatus[key]:'ERROR';
+  }
+  if(Object.hasOwn(patch,'safetyWarnings')){
+   const list=cleanWarnings(patch.safetyWarnings);
+   next.safetyWarnings=list;next.dataStatus.safetyWarnings=list?'OK':'ERROR';next.receivedAt.safetyWarnings=Date.now();
   }
   next.isMock=true;next.sequence=++this.sequence;this._value=next;
   if(notify)this.dispatchEvent(new CustomEvent('change',{detail:this.value}));
