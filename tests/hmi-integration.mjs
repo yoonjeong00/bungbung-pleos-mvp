@@ -53,6 +53,16 @@ manual({ignition:'OFF'});assert.match(node('#screen-body').innerHTML,/차량 상
 assert.equal(storage.get('bungbung-v1'),before,'scenario and manual controls must not overwrite the saved pet');
 node('#demo-return').onclick();assert.match(node('#screen-body').innerHTML,/25 km/);
 
+// Selecting or applying an accessory preserves the expensive screen root/grid.
+previews.find(x=>x.dataset.preview==='closet').onclick();
+const screenBefore=node('#screen-body').innerHTML;
+node('#screen-body').listeners.click({target:{closest:()=>({dataset:{item:'scarf'}})}});
+assert.equal(node('#screen-body').innerHTML,screenBefore,'item selection preserves screen root');
+assert.match(node('.fitting-art').innerHTML,/data-art="scarf"/);
+assert.match(node('.fitting-name').textContent,/머플러/);
+click('apply');assert.equal(node('#screen-body').innerHTML,screenBefore,'apply preserves screen root');
+node('#demo-return').onclick();
+
 // Read/write failures used to crash before the first render through bootstrap code.
 globalThis.localStorage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
 await import('../dist/js/hmi-app.js?storage-denied');

@@ -45,3 +45,10 @@ body.android-app .app-tabs{min-height:44px;flex-shrink:0}
  body.android-app .event-layout,body.android-app .wardrobe-layout,body.android-app .badge-layout{grid-template-columns:1fr;overflow:auto}
  body.android-app .event-picture{min-height:220px}
 }
+
+/* Bound expensive compositing on the emulator; retain the existing palette. */
+body.android-app .surface,body.android-app .app-tabs,body.android-app .primary{box-shadow:0 2px 5px #20284618;backdrop-filter:none}
+body.android-app .art{mix-blend-mode:normal}
+body.android-app .growth-enter .art{animation:none}
+body.android-app .app-demo-bar{position:relative;z-index:60;min-height:32px;box-sizing:border-box}
+.item-state:empty{display:none}
