@@ -73,3 +73,30 @@ body.android-app .app-demo-bar{position:relative;z-index:60;min-height:32px;box-
 .welcome-help{font-size:clamp(11px,1.2cqw,16px);text-align:center;color:#656174;margin:0}
 .rename-button{margin-left:auto;padding:6px 10px;border:1px solid #d3d2e2;border-radius:10px;background:#fff;color:#5b5974;font-size:12px;white-space:nowrap}
 @media(max-width:700px){.welcome-layout{grid-template-columns:1fr;overflow:visible}.welcome-visual img{max-height:340px;flex:none}.welcome-content{gap:14px}.welcome-features{gap:10px}.welcome-features li{padding:12px}.welcome-name{gap:8px}}
+/* Match approved onboarding: shared background, original art, bold hierarchy. */
+@font-face{font-family:WelcomeBold;src:url('hmi-assets/welcome-bold.woff') format('woff');font-style:normal;font-weight:700 900;font-display:swap}
+body.android-app .app-window:has(.welcome-layout){background:radial-gradient(ellipse at 30% 45%,#f8f6ff,#efedfc 78%);padding:1.6cqw 2cqw}
+.welcome-layout{background:none;border-radius:0;padding:0;grid-template-columns:53% 45%;gap:2%;overflow:auto}
+.welcome-visual{justify-content:space-between}
+.welcome-visual h1{font-family:WelcomeBold,'Noto Sans KR',sans-serif;font-weight:900;font-size:clamp(22px,3.1cqw,46px);letter-spacing:-.045em;line-height:1.2;margin-top:.6cqw;white-space:nowrap}
+.welcome-scene{flex:1;min-height:0;width:108%;margin-left:-4%;display:flex;align-items:center;mask-image:linear-gradient(to right,transparent,#000 3%,#000 96%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 3%,#000 96%,transparent)}
+.welcome-art{display:block;width:100%;height:100%;overflow:hidden}
+.welcome-art-hero{max-height:100%;mask-image:linear-gradient(to bottom,transparent,#000 5%,#000 95%,transparent);-webkit-mask-image:linear-gradient(to bottom,transparent,#000 5%,#000 95%,transparent)}
+.welcome-caption{font-family:WelcomeBold,sans-serif;font-weight:700;font-size:clamp(13px,1.5cqw,22px);padding:.65cqw 2cqw;border:1px solid #fff;background:linear-gradient(#fff9,#e5e2fbaa);box-shadow:0 3px 9px #9b94c21c}
+.welcome-content{justify-content:flex-start;padding:2.2cqw 0 1cqw;gap:1.4cqw}
+.welcome-content h2{font-family:WelcomeBold,'Noto Sans KR',sans-serif;font-size:clamp(29px,4.1cqw,60px);font-weight:900;letter-spacing:-.045em;line-height:1.25}
+.welcome-content h2 span{color:#1426ff}
+.welcome-intro{font-size:clamp(17px,2.1cqw,30px);font-weight:500;line-height:1.5;margin:0 0 1cqw}
+.welcome-features{gap:1cqw;margin:0 0 1.8cqw}
+.welcome-features li{min-height:5.4cqw;box-sizing:border-box;padding:.7cqw 1.5cqw;gap:1.6cqw;border-radius:2.6cqw;background:linear-gradient(125deg,#ffffffb0,#f6f4ffb0);border:1px solid #fff9;box-shadow:0 6px 12px #8780ac22;font-size:clamp(14px,1.75cqw,25px);font-weight:700}
+.welcome-symbol{width:10cqw;height:5.7cqw;min-width:65px;flex-shrink:0;padding-right:1.3cqw;position:relative;border:0}
+.welcome-symbol:after{content:'';position:absolute;right:0;top:25%;height:50%;width:1px;background:#c8c3df}
+.welcome-symbol .welcome-art{mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent)}
+.welcome-name{font-size:clamp(15px,1.7cqw,24px);gap:1.5cqw}
+.welcome-name input{font-size:clamp(17px,2cqw,29px);font-weight:600;min-height:4.7cqw;padding:.9cqw 1.7cqw;border-radius:1.6cqw}
+body.android-app .primary.welcome-start,.welcome-start{margin-top:.9cqw;min-height:6.2cqw;border-radius:3.1cqw;font-family:WelcomeBold,sans-serif;font-size:clamp(19px,2.35cqw,34px);font-weight:800;background:linear-gradient(120deg,#285eff,#1426ff);border:1px solid #ffffffa0;box-shadow:inset 0 2px 3px #ffffff50,0 4px 8px #3336ff18}
+.welcome-start .icon{width:2.8cqw;height:2.8cqw;min-width:24px;min-height:24px}
+.welcome-help{font-size:clamp(12px,1.5cqw,21px)}
+@media(max-width:700px){.welcome-layout{grid-template-columns:1fr;gap:18px}.welcome-visual h1{white-space:normal}.welcome-scene{height:390px;flex:none}.welcome-content{gap:16px}.welcome-symbol{width:72px;height:52px}.welcome-features li{min-height:72px;padding:10px 16px;border-radius:22px}.welcome-name input{min-height:48px}.welcome-start,body.android-app .primary.welcome-start{min-height:56px;border-radius:28px}.welcome-caption{padding:8px 20px}}
+
+.welcome-features li,.welcome-name label{font-family:WelcomeBold,sans-serif}

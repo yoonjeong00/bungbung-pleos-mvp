@@ -1,7 +1,8 @@
 # 첫 만남 화면 적용
 
-- `hmi-assets/onboarding-hero.webp`: 글자가 없는 토토·알·자동차·아치 장면. 800×1000, 44,124 bytes. 원시안에서 별도 생성한 정적 이미지다.
-- `js/onboarding.js`: 제목, 기능 소개 3개, 이름 입력, 시작 버튼을 실제 HTML로 렌더링. 기능 아이콘은 기존 SVG를 재사용.
+- `hmi-assets/welcome-reference.webp`: 승인된 원시안 보존. SVG viewport로 토토 장면과 3D 아이콘 3개를 표시한다. 새 캐릭터를 생성하지 않았다.
+- `welcome-bold.woff`: Noto Sans CJK KR Bold의 화면 문구 부분집합. 라이선스는 welcome-font-license.txt.
+- `js/onboarding.js`: 제목, 기능 소개 3개, 이름 입력, 시작 버튼을 실제 HTML로 렌더링. 기능 아이콘은 원시안의 3D 이미지를 사용.
 - 토토/알/배경은 하나의 정적 장면이다. 독립 캐릭터 애니메이션용 레이어는 아니다.
 - S1 첫 만남 화면에 적용. 내 방 > 이름 바꾸기로 재접근 가능.
 - 최대 12자, 공백 이름은 토토, HTML escape 적용. 저장된 이전 버전에 이름이 없으면 토토로 마이그레이션.
