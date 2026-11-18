@@ -1,9 +1,10 @@
 // TEAM 1: mock vehicle provider. Replace adapter, keep payload contract.
-export const FUEL_THRESHOLDS=Object.freeze({hungryKm:150,lowFuelKm:50}); // Demo thresholds, not vehicle diagnostics.
+export const FUEL_THRESHOLDS=Object.freeze({hungryKm:150,lowFuelKm:50,refuelJumpKm:100,refuelShowMs:10000}); // Demo thresholds, not vehicle diagnostics.
+export const TEMP_THRESHOLDS=Object.freeze({coldMaxC:3,hotMinC:30}); // Demo thresholds (°C): cold at or below, hot at or above.
 const cleanWarnings=list=>Array.isArray(list)&&list.length<=20&&list.every(w=>w&&['red','yellow'].includes(w.level))?list.map(w=>({id:String(w.id??'').slice(0,80),level:w.level,label:String(w.label??'').slice(0,120)})):null;
-export const baseline=()=>({uxRestricted:false,gear:'P',ignition:'ON',odometerKm:10180,tripDistanceKm:32,tripTimeMin:41,rangeRemainingKm:420,outsideTempC:18,tireWarning:false,safetyWarnings:[],dataStatus:{},isMock:true});
+export const baseline=()=>({uxRestricted:false,gear:'P',ignition:'ON',odometerKm:10180,tripDistanceKm:32,tripTimeMin:41,rangeRemainingKm:420,outsideTempC:18,tireWarning:false,headlightOn:false,safetyWarnings:[],dataStatus:{},isMock:true});
 const numericLimits={odometerKm:[0,999999],tripDistanceKm:[0,2000],tripTimeMin:[0,1440],rangeRemainingKm:[0,1500],outsideTempC:[-40,60]};
-const enums={gear:['P','R','N','D'],ignition:['OFF','ACC','ON','START'],uxRestricted:[true,false],tireWarning:[true,false]};
+const enums={gear:['P','R','N','D'],ignition:['OFF','ACC','ON','START'],uxRestricted:[true,false],tireWarning:[true,false],headlightOn:[true,false]};
 export class VehicleProvider extends EventTarget {
  constructor(snapshot=null){super();this._value=baseline();this.sequence=0;this.set(snapshot||{},false)}
  get value(){return structuredClone(this._value)}

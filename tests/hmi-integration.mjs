@@ -12,7 +12,7 @@ class Element {
 }
 const nodes=new Map();
 const node=key=>{if(!nodes.has(key))nodes.set(key,new Element());return nodes.get(key);};
-const previews=['home','growth','badges','closet','recovery','summary','rain','hungry','tire','yellow','red'].map(view=>Object.assign(new Element(),{dataset:{preview:view}}));
+const previews=['home','growth','badges','closet','recovery','summary','rain','hungry','tire','yellow','red','refuel','cold','hot','night'].map(view=>Object.assign(new Element(),{dataset:{preview:view}}));
 const documentListeners={};const windowListeners={};
 globalThis.document={hidden:false,body:node('body'),querySelector:node,querySelectorAll(selector){if(selector==='[data-preview]')return previews;if(selector==='.room-stage .bubble')return [...node('.room-stage').children];return [];},createElement:()=>new Element(),addEventListener:(type,fn)=>documentListeners[type]=fn};
 globalThis.window={addEventListener:(type,fn)=>windowListeners[type]=fn};
@@ -73,7 +73,7 @@ for(let scene=1;scene<=10;scene++){
  native({scene});
  assert.match(node('#data-source').textContent,/ADB 모의/);
  if(scene===2||scene===7)assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
- if(scene===3)assert.match(node('#screen-body').innerHTML,/주행 가능 거리가 부족해요/);
+ if(scene===3)assert.match(node('#screen-body').innerHTML,/배고파… 주유소 들를까\?/);
  if(scene===4)assert.match(node('#screen-body').innerHTML,/냠냠/);
  if(scene===5)assert.match(node('#screen-body').innerHTML,/성장했어요/);
  if(scene===8)assert.match(node('#screen-body').innerHTML,/차량 상태를 확인/);
@@ -100,7 +100,7 @@ for(let i=1;i<=5;i++){
  native({scene:i});
  if(i===1){assert.match(node('#screen-body').innerHTML,/우리의 첫 드라이브/);node('#pet-name').value='동행';click('welcome-start');}
  if(i===2)assert.match(node('#screen-body').innerHTML,/toto-departure.webp/);
- if(i===3)assert.match(node('#screen-body').innerHTML,/주행 가능 거리가 부족해요/);
+ if(i===3)assert.match(node('#screen-body').innerHTML,/배고파… 주유소 들를까\?/);
  if(i===4){assert.match(node('#screen-body').innerHTML,/냠냠/);click('confirm');assert.match(node('#screen-body').innerHTML,/동행과 잠시/);}
  if(i===5){assert.match(node('#screen-body').innerHTML,/어린이 토토로 성장/);click('confirm');assert.match(node('#screen-body').innerHTML,/Lv.2 어린이/);}
 }
@@ -120,9 +120,12 @@ node('#demo-return').onclick();
 
 const warningSaved=storage.get('bungbung-v1');
 // Team warning scenes reuse the real HMI handler and isolated demo lifecycle.
-for(const [view,asset] of [['hungry','hungry'],['tire','hurt'],['yellow','worried']]){
+for(const [view,asset,text] of [['hungry','hungry','배고파… 주유소 들를까'],['tire','hurt','발이 좀 아파… 타이어 봐줄래'],['yellow','worried','차가 알려줄 게 있대요'],['refuel','happy','배불러! 고마워요'],['cold','cold','코끝이 시려요'],['hot','hot','오늘 덥다~'],['night','sleepy','별이 뜨는 밤이에요']]){
  previews.find(x=>x.dataset.preview===view).onclick();
  assert.match(node('#screen-body').innerHTML,new RegExp('bungbung_child_'+asset+'\\.png'));
+ assert.ok(node('#screen-body').innerHTML.includes(text),view+' line');
+ assert.match(node('#screen-body').innerHTML,/rail-gear">D</,view+' is driving');
+ assert.doesNotMatch(node('#screen-body').innerHTML,/차간거리|조심하세요|천천히|안전하게 (달려|주유)/,view+' has no driving instruction');
  assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
 }
 previews.find(x=>x.dataset.preview==='red').onclick();
@@ -131,7 +134,7 @@ assert.doesNotMatch(node('#screen-body').innerHTML,/drive-pet|drive-message|app-
 manual({gear:'P'});assert.match(node('#screen-body').innerHTML,/critical-warning/,'red warning also blocks parked interaction');
 node('#demo-return').onclick();assert.doesNotMatch(node('#screen-body').innerHTML,/critical-warning/,'old saved snapshots clear mock warnings on restore');
 assert.equal(storage.get('bungbung-v1'),warningSaved,'warning previews preserve saved state');
-console.log('Team warning HMI: 3 artwork routes, critical priority, parked block, return isolation passed');
+console.log('Team warning HMI: 7 artwork routes, critical priority, parked block, return isolation passed');
 
 // Read/write failures used to crash before the first render through bootstrap code.
 globalThis.localStorage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
