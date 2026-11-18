@@ -133,6 +133,28 @@ node('#demo-return').onclick();assert.doesNotMatch(node('#screen-body').innerHTM
 assert.equal(storage.get('bungbung-v1'),warningSaved,'warning previews preserve saved state');
 console.log('Team warning HMI: 3 artwork routes, critical priority, parked block, return isolation passed');
 
+// Rehearse recording keys through the actual HMI handlers, preserving the user's save.
+globalThis.location.search='?android=1&record=1';
+await import('../dist/js/hmi-app.js?recording-rehearsal');
+const recordBefore=storage.get('bungbung-v1');
+const key=code=>documentListeners.keydown({code,target:{closest:()=>null},preventDefault(){}});
+key('Digit1');assert.match(node('#screen-body').innerHTML,/우리의 첫 드라이브/);
+node('#pet-name').value='토토';click('welcome-start');
+assert.match(node('#screen-body').innerHTML,/마이카펫/);
+key('Digit2');assert.match(node('#screen-body').innerHTML,/departure-art/);
+assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
+key('Digit7');assert.match(node('#screen-body').innerHTML,/신호 대기 · D/);
+key('Digit3');assert.match(node('#screen-body').innerHTML,/49 km/);
+key('Digit4');assert.match(node('#screen-body').innerHTML,/냠냠/);click('confirm');
+key('Digit5');assert.match(node('#screen-body').innerHTML,/성장/);click('confirm');
+key('Digit0');assert.match(node('#screen-body').innerHTML,/오늘도 함께 달렸어요/);click('confirm');
+assert.match(node('#screen-body').innerHTML,/app-tabs/);
+assert.equal(node('#demo-panel').hidden,true,'recording keys leave no covering panel');
+assert.match(node('#data-source').textContent,/모의 차량 데이터/);
+assert.equal(storage.get('bungbung-v1'),recordBefore,'recording must preserve the original save');
+node('#demo-return').onclick();
+console.log('PASS recording rehearsal: welcome, departure, stop, low fuel, recovery, growth, summary, return');
+
 // Read/write failures used to crash before the first render through bootstrap code.
 globalThis.localStorage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
 await import('../dist/js/hmi-app.js?storage-denied');

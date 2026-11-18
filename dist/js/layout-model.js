@@ -4,7 +4,7 @@ export const freeTargets=['pet','level','weather','message'];
 export const freshLayout=()=>({version:1,ratio:70,roomHeight:0,sideLeft:false,hidden:[],boxes:{}});
 export const clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
 export function normalizeLayout(input){
- if(!input||input.version!==1)throw Error('붕붕이 배치 파일 버전이 맞지 않아요.');
+ if(!input||input.version!==1)throw Error('마이카펫(My car pet) 배치 파일 버전이 맞지 않아요.');
  const out=freshLayout();
  out.ratio=Number.isFinite(input.ratio)?clamp(input.ratio,45,85):70;
  out.roomHeight=Number.isFinite(input.roomHeight)?(input.roomHeight===0?0:clamp(input.roomHeight,280,720)):0;

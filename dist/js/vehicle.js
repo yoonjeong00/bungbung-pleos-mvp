@@ -28,7 +28,7 @@ export const scenes=[
 ['S1','첫 만남','알에서 태어나는 작은 친구',{...baseline(),odometerKm:10000,tripDistanceKm:0,tripTimeMin:0},'birth'],
 ['S2','출발','정지 이미지로 전환',{gear:'D',uxRestricted:false,ignition:'ON',odometerKm:10180,tripDistanceKm:12,tripTimeMin:18,dataStatus:{}},null],
 ['S3','배고픔','남은 거리 49 km',{gear:'D',uxRestricted:false,rangeRemainingKm:49},null],
-['S4','주유 회복','주차 후 배부른 붕붕이',{gear:'P',rangeRemainingKm:620},'recovery'],
+['S4','주유 회복','주차 후 배부른 토토',{gear:'P',rangeRemainingKm:620},'recovery'],
 ['S5','첫 성장','누적 300 km 달성',{gear:'P',odometerKm:10300,tripDistanceKm:32,tripTimeMin:41},'growth'],
 ['S6','겨울 아침','외기온 -3°C 모의 입력 · 자동 착용 준비 중',{gear:'P',outsideTempC:-3,uxRestricted:false,dataStatus:{}},null],
 ['S7','신호 대기','D에서는 상호작용 불가',{gear:'D',tripTimeMin:44,uxRestricted:false},null],
