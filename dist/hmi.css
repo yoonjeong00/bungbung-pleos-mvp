@@ -184,3 +184,19 @@ body.android-app .drive-message>.icon{width:24px;height:24px}
 .drive-stage-label{font-size:.75em;font-weight:400;color:#737c91;white-space:nowrap}
 body.android-app .drive-stage-label{margin-left:auto}
 @media(max-width:700px){body.android-app .drive-stage-label{display:none}body.android-app .drive-message{justify-content:flex-start}body.android-app .drive-brand .weather-label{padding:6px 10px}}
+/* Drive polish: red warning keeps the center nav, readable sizes, mock mark inside the car screen. */
+.screen-body.driving>.critical-warning{grid-column:auto}
+.critical-warning h1,.critical-warning p{line-height:1.5;word-break:keep-all}
+.critical-warning small{font-size:16px}
+.drive-message,body.android-app .drive-message{line-height:1.5}
+.drive-stage-label{color:#4f5769}
+body.android-app .drive-brand .weather-label{font-size:clamp(16px,1.25cqw,20px)}
+body.android-app .drive-stage-label{font-size:16px}
+body.android-app .drive-app .drive-character .drive-stats>span{font-size:clamp(20px,1.9cqw,32px)}
+.device .screen>.mock-label{position:absolute;z-index:40;top:0;right:12cqw;height:5.1%;display:flex;align-items:center;gap:6px;font-size:13px;line-height:1;color:#fff;white-space:nowrap;pointer-events:none}
+.device .screen>.mock-label:before{margin:0;background:#9fb0ff}
+body.android-app .device .screen>.mock-label{top:auto;right:0;bottom:0;height:auto;padding:3px 10px;font-size:12px;color:#343d70;background:#eef1ffeb;border-top-left-radius:8px}
+body.android-app .device .screen{padding-bottom:20px}
+/* Demo 3-pane view: status at least 16px, distance/temperature larger than the line (line is 1.5cqw). */
+.drive-brand .weather-label{font-size:max(16px,.95cqw)}
+.drive-app .drive-character .drive-stats>span{font-size:1.9cqw}
