@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {derive,initial,stages} from '../dist/js/logic.js';
+import {baseline,FUEL_THRESHOLDS,TEMP_THRESHOLDS} from '../dist/js/vehicle.js';
+
+// Threshold contract (spec 5.1, 6.1). These pin today's values so a change in one place
+// without the others is caught. Screen-level boundaries are checked in hmi-integration.mjs.
+
+// Constants in vehicle.js
+assert.equal(FUEL_THRESHOLDS.lowFuelKm,50,'low fuel below 50km');
+assert.equal(FUEL_THRESHOLDS.hungryKm,150,'hungry below 150km');
+assert.equal(FUEL_THRESHOLDS.refuelJumpKm,100,'refuel detected at +100km');
+assert.equal(FUEL_THRESHOLDS.refuelShowMs,10000,'refuel shown for 10s');
+assert.equal(TEMP_THRESHOLDS.coldMaxC,3,'cold at or below 3°');
+assert.equal(TEMP_THRESHOLDS.hotMinC,30,'hot at or above 30°');
+
+// logic.js d.hungry (used by parked screens and refuel recovery) still uses 50km.
+const car=patch=>({...baseline(),gear:'P',...patch});
+assert.equal(derive(car({rangeRemainingKm:49}),initial()).hungry,true,'49km is low fuel in logic.js');
+assert.equal(derive(car({rangeRemainingKm:50}),initial()).hungry,false,'50km is not low fuel in logic.js');
+assert.equal(derive(car({rangeRemainingKm:49}),initial()).hungry,49<FUEL_THRESHOLDS.lowFuelKm,'logic.js 50 matches FUEL_THRESHOLDS.lowFuelKm');
+
+// Growth stages: distance = odometer - baseOdo (initial baseOdo 10000).
+const s=initial();
+const stageAt=km=>derive(car({odometerKm:s.baseOdo+km}),initial()).stage;
+const name=km=>stages[stageAt(km)].name;
+for(const [km,expected] of [[0,'아기'],[299,'아기'],[300,'어린이'],[1999,'어린이'],[2000,'청소년'],[5999,'청소년'],[6000,'어른']])
+ assert.equal(name(km),expected,`${km}km is ${expected}`);
+// The stage list and the calculation agree on every boundary.
+for(const n of [2,3,4]){
+ assert.equal(stageAt(stages[n].km),n,`stages[${n}].km reaches stage ${n}`);
+ assert.equal(stageAt(stages[n].km-1),n-1,`one km before stages[${n}].km is stage ${n-1}`);
+}
+
+console.log('PASS thresholds: fuel 50/150, refuel 100km/10s, temp 3/30, growth 300/2000/6000 boundaries');

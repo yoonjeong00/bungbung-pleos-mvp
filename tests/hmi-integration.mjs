@@ -128,6 +128,24 @@ for(const [view,asset,text] of [['hungry','hungry','배고파… 주유소 들�
  assert.doesNotMatch(node('#screen-body').innerHTML,/차간거리|조심하세요|천천히|안전하게 (달려|주유)/,view+' has no driving instruction');
  assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
 }
+// Threshold boundaries on the real driving screen (spec 5.1). Headlight may still be on from the night preview. Range stays at 150km during temperature checks so a +100km jump does not trigger the refuel state.
+node('#demo-return').onclick();
+const driveLabel=()=>node('#screen-body').innerHTML.match(/weather-label">(?:<svg[\s\S]*?<\/svg>)?([^<]*)</)?.[1];
+manual({gear:'D',rangeRemainingKm:'49'});assert.equal(driveLabel(),'연료 부족','49km is low fuel');
+manual({gear:'D',rangeRemainingKm:'50'});assert.equal(driveLabel(),'주행 가능 거리','50km is hungry, not low fuel');
+manual({gear:'D',rangeRemainingKm:'149'});assert.equal(driveLabel(),'주행 가능 거리','149km is hungry');
+manual({gear:'D',rangeRemainingKm:'150'});assert.notEqual(driveLabel(),'주행 가능 거리','150km is not hungry');
+manual({gear:'D',rangeRemainingKm:'150',outsideTempC:'3'});assert.equal(driveLabel(),'추운 날','3° is cold');
+manual({gear:'D',rangeRemainingKm:'150',outsideTempC:'4'});assert.notEqual(driveLabel(),'추운 날','4° is not cold');
+manual({gear:'D',rangeRemainingKm:'150',outsideTempC:'29'});assert.notEqual(driveLabel(),'더운 날','29° is not hot');
+manual({gear:'D',rangeRemainingKm:'150',outsideTempC:'30'});assert.equal(driveLabel(),'더운 날','30° is hot');
+// Parked touch reaction in Toto's voice, by FUEL_THRESHOLDS (spec 7.2 / 13.3 N3).
+const petBubble=range=>{manual({gear:'P',rangeRemainingKm:range});click('pet');return node('.room-stage').children.at(-1)?.textContent;};
+assert.equal(petBubble('49'),'배고파… 주유소 들를까?','touch under 50km');
+assert.equal(petBubble('120'),'출출해… 주행 가능 120km','touch under 150km shows the number');
+assert.equal(petBubble('420'),'같이 쉬니까 좋다!','touch with enough range');
+assert.doesNotMatch(petBubble('420')+petBubble('49'),/요[.!?]?$|필요해요|좋아요/,'touch lines are casual (반말)');
+node('#demo-return').onclick();
 // Rain comes from wiperState (spec 5.1 / 13.3 N1): preview button, ADB patch, and OFF clears it.
 previews.find(x=>x.dataset.preview==='rain').onclick();
 assert.match(node('#screen-body').innerHTML,/와이퍼 작동 중/);
