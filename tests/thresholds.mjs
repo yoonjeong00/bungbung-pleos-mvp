@@ -45,4 +45,20 @@ assert.equal(savedLatch(49),49,'saved 49km latch is kept');
 assert.equal(savedLatch(50),null,'saved 50km latch is dropped');
 assert.equal(savedLatch(55),null,'saved 55km latch is dropped');
 
+// Cold-day badge (spec 7.3 / 13.3 N2): only while actually driving, at or below TEMP_THRESHOLDS.coldMaxC.
+const coldBadge=(gear,temp)=>{const st=initial();advance(st,null,car({gear,outsideTempC:temp}),{now:1});return st.badges.includes('cold');};
+assert.equal(coldBadge('D',3),true,'driving at 3° earns the cold badge');
+assert.equal(coldBadge('D',-3),true,'driving at -3° earns the cold badge');
+assert.equal(coldBadge('D',4),false,'driving at 4° does not');
+assert.equal(coldBadge('P',-3),false,'parked at -3° does not');
+{
+ const st=initial();
+ advance(st,null,car({gear:'D',outsideTempC:3}),{now:1});
+ const earnedAt=st.badgeEarnedAt.cold,scarves=st.items.filter(x=>x==='scarf').length;
+ advance(st,null,car({gear:'D',outsideTempC:-5}),{now:2});
+ assert.equal(st.badges.filter(x=>x==='cold').length,1,'the cold badge is not given twice');
+ assert.equal(st.badgeEarnedAt.cold,earnedAt,'the first earned time is kept');
+ assert.equal(st.items.filter(x=>x==='scarf').length,scarves,'the scarf is not added twice');
+}
+
 console.log('PASS thresholds: fuel 50/150, refuel 100km/10s, temp 3/30, growth 300/2000/6000 boundaries');

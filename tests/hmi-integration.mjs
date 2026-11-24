@@ -150,6 +150,13 @@ const rangeHeading=range=>{manual({gear:'P',rangeRemainingKm:range});for(let i=0
 assert.equal(rangeHeading('49'),'배고파… 주유소 들를까?','range detail under 50km');
 assert.equal(rangeHeading('120'),'조금 출출해','range detail under 150km');
 assert.equal(rangeHeading('420'),'배불러, 든든해!','range detail with enough range');
+// Parked cold wording uses TEMP_THRESHOLDS.coldMaxC (spec 13.3 N2).
+const homeHtml=temp=>{manual({gear:'P',rangeRemainingKm:'420',outsideTempC:temp});for(let i=0;i<3&&/data-action="confirm"/.test(node('#screen-body').innerHTML);i++)click('confirm');node('#screen-body').listeners.click({target:{closest:()=>({dataset:{page:'home'}})}});return node('#screen-body').innerHTML;};
+assert.match(homeHtml('3'),/추운 날이에요/,'parked home shows the cold line at 3°');
+assert.doesNotMatch(homeHtml('4'),/추운 날이에요/,'parked home hides the cold line at 4°');
+node('#screen-body').listeners.click({target:{closest:()=>({dataset:{badge:'cold'}})}});
+assert.match(node('#screen-body').innerHTML,/3° 이하 추운 날에 함께 달렸어요/,'cold badge description follows the threshold');
+assert.doesNotMatch(node('#screen-body').innerHTML,/영하의 날씨/);
 node('#demo-return').onclick();
 // Rain comes from wiperState (spec 5.1 / 13.3 N1): preview button, ADB patch, and OFF clears it.
 previews.find(x=>x.dataset.preview==='rain').onclick();
