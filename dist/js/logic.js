@@ -1,4 +1,5 @@
 import {cleanPetName} from './onboarding.js?v=20261115-r7';
+import {FUEL_THRESHOLDS} from './vehicle.js?v=20261115-r7';
 // TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
 export const stages=[{name:'알',km:0},{name:'아기',km:0},{name:'어린이',km:300},{name:'청소년',km:2000},{name:'어른',km:6000}];
 export const initial=()=>({petName:'토토',onboardingComplete:false,baseOdo:10000,hat:'none',badges:[],badgeEarnedAt:{},items:['headphones','cap','scarf'],ackStage:1,pendingGrowthStage:1,maxDistanceKm:0,queuedEvents:[],activeEvent:null,activeEventData:null,lowRangeKm:null,refuelDetails:null,vehicleSnapshot:null});
@@ -23,7 +24,7 @@ export function derive(v,s){
  const distance=rawDistance===null?null:distanceHold?Math.max(0,s.maxDistanceKm||0):Math.max(0,s.maxDistanceKm||0,rawDistance);
  const rawStage=distance===null?1:distance>=6000?4:distance>=2000?3:distance>=300?2:1;
  const stage=Math.max(rawStage,s.ackStage||1),range=readValue(v,'rangeRemainingKm');
- return {restricted,dangerous,warningUnknown,distanceHold,parked:!distanceHold&&v.gear==='P',distance,rawStage,stage,range,hungry:range!==null&&range<50,temp:readValue(v,'outsideTempC'),next:stages[stage+1]||null};
+ return {restricted,dangerous,warningUnknown,distanceHold,parked:!distanceHold&&v.gear==='P',distance,rawStage,stage,range,hungry:range!==null&&range<FUEL_THRESHOLDS.lowFuelKm,temp:readValue(v,'outsideTempC'),next:stages[stage+1]||null};
 }
 const eventTypes=['recovery','growth','summary','birth'];
 const badgeIds=['first','meal','grow','cold'];
@@ -57,7 +58,7 @@ export function load(){
    maxDistanceKm:Math.max(0,Number.isFinite(r.maxDistanceKm)?r.maxDistanceKm:0),
    queuedEvents:Array.isArray(r.queuedEvents)?[...new Set(r.queuedEvents.filter(x=>eventTypes.includes(x)&&x!==activeEvent))]:[],
    activeEvent,activeEventData,refuelDetails,
-   lowRangeKm:validRange(r.lowRangeKm)&&r.lowRangeKm<50?r.lowRangeKm:null,
+   lowRangeKm:validRange(r.lowRangeKm)&&r.lowRangeKm<FUEL_THRESHOLDS.lowFuelKm?r.lowRangeKm:null,
    vehicleSnapshot:r.vehicleSnapshot?.isMock===true?r.vehicleSnapshot:null
   };
  }catch{return initial()}
