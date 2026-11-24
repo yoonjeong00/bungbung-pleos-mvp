@@ -381,11 +381,12 @@
 | --- | --- | --- | --- |
 | N1 ✅ 완료 | 비 상황이 `wiperState`가 아니라 시연 패널 "빗길 주행" 버튼으로만 켜짐 (ADB·수동 입력 불가) | `wiperState` 모의 데이터를 추가하고 5.1 비 조건에 연결. 시연 패널·ADB로도 넣을 수 있게. **완료(2026-11-24)**: `vehicle.js`에 `wiperState`(OFF/INT/LOW/HIGH, 기본 OFF) 추가. OFF가 아니면 비 상황. "빗길 주행" 버튼은 `wiperState: LOW`를 넣음 | `vehicle.js`, `hmi-app.js` |
 | N2 | 추운 날 기준이 둘로 나뉨: 주행 화면 3°, 추운 날 배지·정차 화면 "추운 날이에요" 문구 0° | **3°(`TEMP_THRESHOLDS.coldMaxC`) 하나로 통일** | `state-machine.js`, `hmi-app.js` |
-| N3 | 정차 중 터치 반응 문구 "배가 고파요. 주유가 필요해요!"가 존댓말이고, 배고픔을 50km로 판단 | **토토 말투(반말)로 바꾸고, 배고픔 판단은 `FUEL_THRESHOLDS`를 씀** | `hmi-app.js`, `logic.js` |
+| N3 ✅ 완료 | 정차 중 터치 반응 문구 "배가 고파요. 주유가 필요해요!"가 존댓말이고, 배고픔을 50km로 판단 | **토토 말투(반말)로 바꾸고, 배고픔 판단은 `FUEL_THRESHOLDS`를 씀**. **완료(2026-11-24)**: `hmi-app.js`에서 `FUEL_THRESHOLDS`로 3단계 판단 — 50km 미만 "배고파… 주유소 들를까?", 150km 미만 "출출해… 주행 가능 ○○km", 그 이상 "같이 쉬니까 좋다!". `logic.js`의 `d.hungry`는 그대로 | `hmi-app.js` |
 | N4 ✅ 완료 | 시연 S6이 P에서 외기온 -3°를 넣어 추운 토토·추운 날 배지가 나오지 않음 | 주행 중(D)에 -3°를 넣어 10.2 기대 결과가 나오게. **완료(2026-11-24)**: S6을 D단·48km/h·외기온 -3°로 바꿈. 주행 화면에 추운 토토, 추운 날 배지 획득 | `vehicle.js`, `hmi-app.js` |
 | N5 | `logic.js`에 연료 기준 50을 숫자로 직접 쓴 곳 2곳: 배고픔 판단(`range<50`), 저장값 읽기(`lowRangeKm<50`) | `FUEL_THRESHOLDS.lowFuelKm` 사용 | `logic.js` |
 | N6 | `state-machine.js`에 숫자를 직접 쓴 곳 2곳: 연료 부족 기록(`n<50`), 주유 회복 판단(100km 증가) | `FUEL_THRESHOLDS.lowFuelKm`, `FUEL_THRESHOLDS.refuelJumpKm` 사용 | `state-machine.js` |
 | N7 | 성장 기준 거리(300/2,000/6,000)가 3곳에 따로 있음: 단계 목록(`stages`), 단계 계산(`derive`), 옛 저장값 변환(`load`) | 단계 목록(`stages`) 한곳만 보고 계산하게 | `logic.js` |
+| N8 | 정차 화면 주행 가능 거리 상세의 배고픔 문구("토토가 배고파요")가 `logic.js`의 50km 하나만 씀 | `FUEL_THRESHOLDS` 3단계(연료 부족/배고픔/충분)에 맞추기. **N5와 함께 진행** | `hmi-app.js`, `logic.js` |
 
 ---
 
