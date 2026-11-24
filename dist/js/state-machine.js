@@ -1,5 +1,5 @@
 import {derive,readValue} from './logic.js?v=20261115-r7';
-import {FUEL_THRESHOLDS} from './vehicle.js?v=20261115-r7';
+import {FUEL_THRESHOLDS,TEMP_THRESHOLDS} from './vehicle.js?v=20261115-r7';
 const eventTypes=['recovery','growth','summary','birth'];
 export function addBadge(s,id,at=Date.now()){
  if(!s.badges.includes(id)){s.badges.push(id);(s.badgeEarnedAt??={})[id]=at}
@@ -24,7 +24,7 @@ export function advance(s,previous,vehicle,{detect=true,now=Date.now()}={}){
   const hasMoved=(d.distance!==null&&d.distance>0)||(trip!==null&&trip>0);
   if(!d.parked&&hasMoved){
    addBadge(s,'first',now);
-   if(d.temp!==null&&d.temp<=0){
+   if(d.temp!==null&&d.temp<=TEMP_THRESHOLDS.coldMaxC){
     addBadge(s,'cold',now);
     s.items??=[];if(!s.items.includes('scarf'))s.items.push('scarf');
    }
