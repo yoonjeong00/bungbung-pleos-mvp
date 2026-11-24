@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {derive,initial,load,stages} from '../dist/js/logic.js';
+import {derive,initial,load,stages,MAX_STAGE,stageForDistance} from '../dist/js/logic.js';
 import {advance} from '../dist/js/state-machine.js';
 import {baseline,FUEL_THRESHOLDS,TEMP_THRESHOLDS} from '../dist/js/vehicle.js';
 
@@ -31,6 +31,13 @@ for(const n of [2,3,4]){
  assert.equal(stageAt(stages[n].km),n,`stages[${n}].km reaches stage ${n}`);
  assert.equal(stageAt(stages[n].km-1),n-1,`one km before stages[${n}].km is stage ${n-1}`);
 }
+
+// The stage list holds only stages: 0 알, then 아기..어른 with increasing km (spec 13.3 N7).
+assert.equal(MAX_STAGE,4,'highest stage is 어른 (4)');
+assert.equal(stages[MAX_STAGE].name,'어른');
+for(let i=2;i<=MAX_STAGE;i++)assert.ok(stages[i].km>stages[i-1].km,`stages[${i}] starts after stages[${i-1}]`);
+assert.equal(stageForDistance(0),1,'0km is 아기, never 알');
+assert.equal(stageForDistance(null),1,'unknown distance is 아기');
 
 // Refuel recovery (state-machine.js) uses FUEL_THRESHOLDS: low below 50km, then +100km.
 const recovered=(low,high)=>{const st=initial();let d=advance(st,null,car({gear:'D',rangeRemainingKm:low}));advance(st,d,car({gear:'D',rangeRemainingKm:high}));return st.queuedEvents.includes('recovery')&&st.badges.includes('meal');};
