@@ -128,6 +128,25 @@ for(const [view,asset,text] of [['hungry','hungry','배고파… 주유소 들�
  assert.doesNotMatch(node('#screen-body').innerHTML,/차간거리|조심하세요|천천히|안전하게 (달려|주유)/,view+' has no driving instruction');
  assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
 }
+// Rain comes from wiperState (spec 5.1 / 13.3 N1): preview button, ADB patch, and OFF clears it.
+previews.find(x=>x.dataset.preview==='rain').onclick();
+assert.match(node('#screen-body').innerHTML,/와이퍼 작동 중/);
+assert.match(node('#screen-body').innerHTML,/톡톡, 비가 와요/);
+assert.match(node('#screen-body').innerHTML,/rail-gear">D</);
+native({patch:{wiperState:'OFF'}});
+assert.doesNotMatch(node('#screen-body').innerHTML,/와이퍼 작동 중|톡톡, 비가 와요/,'wiper OFF ends rain');
+native({patch:{wiperState:'HIGH'}});
+assert.match(node('#screen-body').innerHTML,/톡톡, 비가 와요/,'ADB wiper patch starts rain');
+native({patch:{wiperState:'HIGH',outsideTempC:1}});
+assert.match(node('#screen-body').innerHTML,/코끝이 시려요/,'cold outranks rain');
+node('#demo-return').onclick();
+// S6 cold day is a driving scene (spec 10.2 / 13.3 N4).
+scene(5);
+assert.match(node('#screen-body').innerHTML,/rail-gear">D</,'S6 is driving');
+assert.match(node('#screen-body').innerHTML,/bungbung_child_cold\.png/);
+assert.match(node('#screen-body').innerHTML,/코끝이 시려요/);
+assert.doesNotMatch(node('#screen-body').innerHTML,/app-tabs/);
+node('#demo-return').onclick();
 previews.find(x=>x.dataset.preview==='red').onclick();
 assert.match(node('#screen-body').innerHTML,/critical-warning/);
 assert.doesNotMatch(node('#screen-body').innerHTML,/drive-pet|drive-message|app-tabs|departure-art/);
