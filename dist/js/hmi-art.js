@@ -3,14 +3,16 @@
  * These are opaque screenshot regions, not transparent standalone 3D assets.
  * Keep UI labels/numbers outside these viewports and render them as live HTML.
  */
+// 출처 기록용, 화면에서 쓰지 않음. extracted/*.webp를 잘라낸 원본 화면 목록이다.
+// 경로는 저장소 맨 위 폴더 기준이다(dist/ 밖이라 앱에는 들어가지 않는다).
 export const referenceImages=Object.freeze({
- growth:{src:'hmi-assets/reference-growth.png',width:1678,height:937},
- badges:{src:'hmi-assets/reference-badges.png',width:1678,height:937},
- driving:{src:'hmi-assets/reference-driving.png',width:1687,height:932},
- home:{src:'hmi-assets/reference-home.png',width:1670,height:942},
- recovery:{src:'hmi-assets/reference-recovery.png',width:1678,height:937},
- wardrobe:{src:'hmi-assets/reference-wardrobe.png',width:1678,height:937},
- summary:{src:'hmi-assets/reference-summary.png',width:1678,height:937},
+ growth:{src:'design/source/reference-growth.png',width:1678,height:937},
+ badges:{src:'design/source/reference-badges.png',width:1678,height:937},
+ driving:{src:'design/source/reference-driving.png',width:1687,height:932},
+ home:{src:'design/source/reference-home.png',width:1670,height:942},
+ recovery:{src:'design/source/reference-recovery.png',width:1678,height:937},
+ wardrobe:{src:'design/source/reference-wardrobe.png',width:1678,height:937},
+ summary:{src:'design/source/reference-summary.png',width:1678,height:937},
 });
 // [source, x, y, width, height]. No text, numerals or clickable UI in the crop.
 export const crops=Object.freeze({

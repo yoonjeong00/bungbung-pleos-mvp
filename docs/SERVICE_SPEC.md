@@ -413,5 +413,6 @@
 | `docs/vehicle-distance-sdk.md` | 누적 거리 SDK 연동 구조 (기술 참고) |
 | `docs/art-direction.md` | 그림 방향과 생성 문장 (디자인 참고) |
 | `docs/DATA_LOGIC_GUIDE.md` | 데이터 로직(`logic.js`·`state-machine.js`·저장) 파일 역할, 고칠 때 조심할 곳, 테스트 (작업 안내) |
+| `design/` (`design/README.md`) | 화면에서 쓰지 않는 그림 보관. `source/`는 지금 그림을 잘라낸 원본 시안, `archive/`는 옛 화면 그림. 앱에 들어가지 않음 (디자인 참고) |
 | 그 밖의 `docs/*` (final-*-audit, team-*, android-review 등) | 작업 기록. 기준으로 쓰지 않음 |
 | 토토 상황별 행동·모션 정의서 (외부 문서) | 상황별 이미지 제작 참고 |
