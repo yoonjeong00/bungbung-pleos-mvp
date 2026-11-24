@@ -1,4 +1,4 @@
-# 붕붕이 · Pleos 차량 동행 MVP
+# 마이카펫 · Pleos 차량 동행 서비스
 
 토토와 첫 만남 → 주차 중 방·꾸미기 → 모의 출발·연료 부족·회복·성장 → 하루 마무리를 시연하는 Android WebView 앱입니다. 웹 진입점은 `dist/index.html`, 앱 로직은 `dist/js/hmi-app.js`입니다.
 
