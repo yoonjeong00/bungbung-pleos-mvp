@@ -145,6 +145,11 @@ assert.equal(petBubble('49'),'배고파… 주유소 들를까?','touch under 50
 assert.equal(petBubble('120'),'출출해… 주행 가능 120km','touch under 150km shows the number');
 assert.equal(petBubble('420'),'같이 쉬니까 좋다!','touch with enough range');
 assert.doesNotMatch(petBubble('420')+petBubble('49'),/요[.!?]?$|필요해요|좋아요/,'touch lines are casual (반말)');
+// Parked range detail follows FUEL_THRESHOLDS in three steps (spec 13.3 N8). Pending recovery/growth cards are acknowledged first.
+const rangeHeading=range=>{manual({gear:'P',rangeRemainingKm:range});for(let i=0;i<3&&/data-action="confirm"/.test(node('#screen-body').innerHTML);i++)click('confirm');node('#screen-body').listeners.click({target:{closest:()=>({dataset:{page:'range'}})}});return node('#screen-body').innerHTML.match(/metric-detail[\s\S]*?<h2>([^<]*)<\/h2>/)?.[1];};
+assert.equal(rangeHeading('49'),'배고파… 주유소 들를까?','range detail under 50km');
+assert.equal(rangeHeading('120'),'조금 출출해','range detail under 150km');
+assert.equal(rangeHeading('420'),'배불러, 든든해!','range detail with enough range');
 node('#demo-return').onclick();
 // Rain comes from wiperState (spec 5.1 / 13.3 N1): preview button, ADB patch, and OFF clears it.
 previews.find(x=>x.dataset.preview==='rain').onclick();

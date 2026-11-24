@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import {derive,initial,stages} from '../dist/js/logic.js';
+import {derive,initial,load,stages} from '../dist/js/logic.js';
+import {advance} from '../dist/js/state-machine.js';
 import {baseline,FUEL_THRESHOLDS,TEMP_THRESHOLDS} from '../dist/js/vehicle.js';
 
 // Threshold contract (spec 5.1, 6.1). These pin today's values so a change in one place
@@ -30,5 +31,18 @@ for(const n of [2,3,4]){
  assert.equal(stageAt(stages[n].km),n,`stages[${n}].km reaches stage ${n}`);
  assert.equal(stageAt(stages[n].km-1),n-1,`one km before stages[${n}].km is stage ${n-1}`);
 }
+
+// Refuel recovery (state-machine.js) uses FUEL_THRESHOLDS: low below 50km, then +100km.
+const recovered=(low,high)=>{const st=initial();let d=advance(st,null,car({gear:'D',rangeRemainingKm:low}));advance(st,d,car({gear:'D',rangeRemainingKm:high}));return st.queuedEvents.includes('recovery')&&st.badges.includes('meal');};
+assert.equal(recovered(49,149),true,'49km then +100km recovers');
+assert.equal(recovered(49,148),false,'49km then +99km does not recover');
+assert.equal(recovered(50,150),false,'starting at 50km is not low fuel, so no recovery');
+
+// load() keeps a saved low-fuel latch only below FUEL_THRESHOLDS.lowFuelKm (same as the old literal 50).
+const savedLatch=km=>{const store=new Map([['bungbung-v1',JSON.stringify({...initial(),onboardingComplete:true,lowRangeKm:km})]]);globalThis.localStorage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)};return load().lowRangeKm;};
+assert.equal(savedLatch(45),45,'saved 45km latch is kept');
+assert.equal(savedLatch(49),49,'saved 49km latch is kept');
+assert.equal(savedLatch(50),null,'saved 50km latch is dropped');
+assert.equal(savedLatch(55),null,'saved 55km latch is dropped');
 
 console.log('PASS thresholds: fuel 50/150, refuel 100km/10s, temp 3/30, growth 300/2000/6000 boundaries');

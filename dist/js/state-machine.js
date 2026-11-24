@@ -1,4 +1,5 @@
 import {derive,readValue} from './logic.js?v=20261115-r7';
+import {FUEL_THRESHOLDS} from './vehicle.js?v=20261115-r7';
 const eventTypes=['recovery','growth','summary','birth'];
 export function addBadge(s,id,at=Date.now()){
  if(!s.badges.includes(id)){s.badges.push(id);(s.badgeEarnedAt??={})[id]=at}
@@ -10,9 +11,9 @@ export function advance(s,previous,vehicle,{detect=true,now=Date.now()}={}){
  if(detect&&!d.distanceHold){
   // Keep the low-range observation until a meaningful total increase occurs.
   // This is a mock heuristic, not a claim that range alone proves a real refuel.
-  const lows=[s.lowRangeKm,previous?.range,d.range].filter(n=>Number.isFinite(n)&&n>=0&&n<50);
+  const lows=[s.lowRangeKm,previous?.range,d.range].filter(n=>Number.isFinite(n)&&n>=0&&n<FUEL_THRESHOLDS.lowFuelKm);
   if(lows.length)s.lowRangeKm=Math.min(...lows);
-  if(Number.isFinite(s.lowRangeKm)&&d.range!==null&&d.range-s.lowRangeKm>=100){
+  if(Number.isFinite(s.lowRangeKm)&&d.range!==null&&d.range-s.lowRangeKm>=FUEL_THRESHOLDS.refuelJumpKm){
    s.refuelDetails={beforeKm:s.lowRangeKm,afterKm:d.range};s.lowRangeKm=null;
    enqueue(s,'recovery');addBadge(s,'meal',now);
    s.items??=[];if(!s.items.includes('bowl'))s.items.push('bowl');
