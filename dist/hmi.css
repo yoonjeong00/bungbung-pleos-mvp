@@ -232,3 +232,10 @@ body.recording-mode .demo-head p{max-width:680px;font-size:13px;line-height:1.5;
 .drive-app .drive-character:is(.cutout-scene,.mood-scene,.departure-scene)>.drive-stats{position:static;display:flex;flex-direction:row;justify-content:center;flex-wrap:wrap;gap:10px;flex-shrink:0;padding:0}
 .drive-app .drive-character:is(.mood-scene,.departure-scene)>.drive-stats>span{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;background:#ffffffba;color:#444c60}
 body .drive-app .drive-character:is(.cutout-scene,.mood-scene,.departure-scene){gap:10px;padding:clamp(8px,1cqw,20px)}
+/* N9: growth-stage label stays at least 16px (spec 9) even when the web demo frame scales the drive card down. */
+.drive-stage-label{font-size:max(16px,.75em)}
+/* N11: the mock-data label hides only when no mock value is in use (hmi-app sets [hidden]). */
+.mock-label[hidden]{display:none!important}
+/* N9: keep the Toto line on one line in the web demo; if space runs out the stage label moves to the next line instead. */
+body:not(.android-app) .drive-message{flex-wrap:wrap}
+body:not(.android-app) .drive-message>span{white-space:nowrap}

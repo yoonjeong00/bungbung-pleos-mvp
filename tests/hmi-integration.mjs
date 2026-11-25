@@ -120,7 +120,7 @@ node('#demo-return').onclick();
 
 const warningSaved=storage.get('bungbung-v1');
 // Team warning scenes reuse the real HMI handler and isolated demo lifecycle.
-for(const [view,asset,text] of [['hungry','hungry','배고파… 주유소 들를까'],['tire','hurt','발이 좀 아파… 타이어 봐줄래'],['yellow','worried','차가 알려줄 게 있대요'],['refuel','happy','배불러! 고마워요'],['cold','cold','코끝이 시려요'],['hot','hot','오늘 덥다~'],['night','sleepy','별이 뜨는 밤이에요']]){
+for(const [view,asset,text] of [['hungry','hungry','배고파… 주유소 들를까'],['tire','hurt','발이 아파… 타이어 봐줄래'],['yellow','worried','차가 알려줄 게 있대요'],['refuel','happy','배불러! 고마워요'],['cold','cold','코끝이 시려요'],['hot','hot','오늘 덥다~'],['night','sleepy','별이 뜨는 밤이에요']]){
  previews.find(x=>x.dataset.preview===view).onclick();
  assert.match(node('#screen-body').innerHTML,new RegExp('bungbung_child_'+asset+'\\.png'));
  assert.ok(node('#screen-body').innerHTML.includes(text),view+' line');

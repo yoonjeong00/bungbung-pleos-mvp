@@ -36,6 +36,7 @@
 | **회복 판정** (`state-machine.js`의 `advance`) | 주행 가능 거리 50km 미만을 본 뒤 100km 이상 늘면 회복 장면, 배부른 날 배지, 밥그릇 | 받은 배지와 소품은 저장돼 되돌릴 수 없다. 조건을 느슨하게 하면 **엉뚱할 때 배지가 생긴다** |
 | **장면 순서** (`state-machine.js`의 `takeEvent`, `completeEvent`) | 장면은 주차 중에만 하나씩 꺼낸다 | 순서를 바꾸면 **주행 중에 성장 장면이 뜨거나**(기준서 위반) 장면이 사라진다 |
 | **화면을 막는 판단** (`logic.js`의 `derive` 제한 조건, `signalValid`) | 신호가 없거나 오래됐거나 이상하면 화면을 막는다 | 느슨하게 하면 **주행 중 안전 규칙을 어길 수 있다** |
+| **진짜·모의 꼬리표 `origin`** (`vehicle.js`의 `origin`, `state-machine.js`의 저장 직전) | 차 값마다 진짜(`real`)·모의(`mock`)를 표시한다. `signalValid`는 이 꼬리표로 항목마다 판단하고(mock은 유효, real은 OK + 15초), "모의 데이터" 표시도 이걸 본다. **`origin`은 화면이 쓰는 값에만 있고, 저장 직전(`advance`의 `vehicleSnapshot`)에 뺀다** | 저장 직전에 빼는 줄을 지우면 **저장 형식이 바뀐다**(스냅샷에 `origin`이 들어감). 진짜 값이 섞인 스냅샷은 `isMock:false`가 되어 `load`가 버린다. 진짜 차량 값은 저장하지 않는 게 원칙(기준서 13.1)이고, real 항목을 빼고 저장하는 구현은 웹 연결기 작업에서 한다 |
 | **시연 칸막이** (`session.checkpoint`) | 시연 중에는 진짜 저장을 하지 않는다 | `save`를 직접 부르면 **시연 값(예: 2,180km, 청소년)이 진짜 토토에 덮어써진다** |
 
 ---
@@ -56,6 +57,7 @@
 | [`tests/team1.mjs`](../tests/team1.mjs) | 차 데이터 검증, 시연 재생 멈춤·재개 |
 | [`tests/thresholds.mjs`](../tests/thresholds.mjs) | 기준값(연료·기온·성장 거리)과 경계, 단계 목록 규칙(최고 단계 4, 거리 증가 순서), 회복 판정, `load`의 연료 부족 기록, 추운 날 배지 |
 | [`tests/growth-stages.mjs`](../tests/growth-stages.mjs) | 성장 현재 동작 고정: 옛 저장 데이터의 단계, 단계가 내려가지 않음, 경계마다 성장 장면 한 번 |
+| [`tests/vehicle-bridge.mjs`](../tests/vehicle-bridge.mjs) | 가짜 차량 패킷: 진짜 ODO + 모의 기어 구분, 진짜 신호만 15초 만료, 비정상 패킷은 값 `null`·화면 막음, 저장 스냅샷에 `origin` 없음, 옛 스냅샷·옛 ODO 패킷 호환, 기어 패킷이 와도 ODO 확인 칸이 오류 아님 |
 
 실행: 저장소 루트에서 `node --test tests/파일이름.mjs`. 고친 뒤에는 `tests/` 전체를 돌린다.
 
