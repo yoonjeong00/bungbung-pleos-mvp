@@ -97,5 +97,5 @@ public class MainActivity extends Activity {
  }
  @Override protected void onStart(){super.onStart();if(uxBridge!=null)uxBridge.start();if(distanceBridge!=null)distanceBridge.start();}
  @Override protected void onStop(){if(uxBridge!=null)uxBridge.stop();if(distanceBridge!=null)distanceBridge.stop();super.onStop();}
- @Override protected void onDestroy(){pageReady=false;if(web!=null){web.destroy();web=null;}super.onDestroy();}
+ @Override protected void onDestroy(){pageReady=false;if(uxBridge!=null)uxBridge.close();if(web!=null){web.destroy();web=null;}super.onDestroy();}
 }
