@@ -114,7 +114,7 @@
 | --- | --- | --- | --- | --- |
 | 빨간 경고 | `safetyWarnings`에 빨간 등급 | 숨김 | – | – (5.3 경고 안내 화면) |
 | 연료 부족 | `rangeRemainingKm` < 50 | `bungbung_child_hungry.png` (전용 이미지 제작 예정) | 연료 부족 | 배고파… 주유소 들를까? |
-| 타이어 경고 | `tireWarning` = true | `bungbung_child_hurt.png` | 타이어 확인 필요 | 발이 좀 아파… 타이어 봐줄래? |
+| 타이어 경고 | `tireWarning` = true | `bungbung_child_hurt.png` | 타이어 확인 필요 | 발이 아파… 타이어 봐줄래? |
 | 노란 경고 | `safetyWarnings`에 노란 등급 | `bungbung_child_worried.png` | 차량 알림 있음 | 차가 알려줄 게 있대요 |
 | 주유 직후 | 주행 가능 거리가 100km 이상 늘어난 뒤 10초 | `bungbung_child_happy.png` | 주유 완료 | 배불러! 고마워요 |
 | 배고픔 | 50 ≤ `rangeRemainingKm` < 150 | `bungbung_child_hungry.png` | 주행 가능 거리 | 주행 가능 ○○km |
@@ -366,6 +366,7 @@
 | 2026-11-25 | Java 연결은 팀원1, 웹 연결기·성장 계산·테스트는 윤서 |
 | 2026-11-25 | 연결 순서: 주행 제한 → 기어·시동 → ODO 성장 → 나머지 |
 | 2026-11-25 | 차량 경고는 일반 권한으로 막혀 당분간 시연 모드에서만 |
+| 2026-11-25 | 진짜 차량 값은 저장하지 않는다. 저장 직전에 real 항목을 빼고, 다시 열면 차에서 새로 읽는다 (구현은 웹 연결기 작업에서) |
 
 ### 13.2 열린 결정
 
@@ -393,10 +394,10 @@
 | N6 ✅ 완료 | `state-machine.js`에 숫자를 직접 쓴 곳 2곳: 연료 부족 기록(`n<50`), 주유 회복 판단(100km 증가) | `FUEL_THRESHOLDS.lowFuelKm`, `FUEL_THRESHOLDS.refuelJumpKm` 사용. **완료(2026-11-24)**: 연료 부족 기록은 `FUEL_THRESHOLDS.lowFuelKm`, 회복 판단은 `FUEL_THRESHOLDS.refuelJumpKm` 사용. 주행 화면 "주유 직후"와 같은 100km 상수를 씀 | `state-machine.js` |
 | N7 ✅ 완료 | 성장 기준 거리(300/2,000/6,000)가 3곳에 따로 있음: 단계 목록(`stages`), 단계 계산(`derive`), 옛 저장값 변환(`load`) | 단계 목록(`stages`) 한곳만 보고 계산하게. **완료(2026-11-24)**: `stageForDistance`(단계 목록만 보고 지나온 마지막 단계, 알 0은 돌려주지 않음)를 만들고 단계 계산(`derive`)과 옛 저장값 변환(`load`)이 모두 사용. `load`의 최고 단계 4도 `MAX_STAGE`(목록 길이 − 1)로 바꿈. 값은 그대로라 기존 사용자 데이터에 영향 없음 (`tests/growth-stages.mjs`로 확인) | `logic.js` |
 | N8 ✅ 완료 | 정차 화면 주행 가능 거리 상세의 배고픔 문구("토토가 배고파요")가 `logic.js`의 50km 하나만 씀 | `FUEL_THRESHOLDS` 3단계(연료 부족/배고픔/충분)에 맞추기. **N5와 함께 진행**. **완료(2026-11-24)**: `FUEL_THRESHOLDS`로 3단계 — 50km 미만 "배고파… 주유소 들를까?", 150km 미만 "조금 출출해", 그 이상 "배불러, 든든해!" | `hmi-app.js` |
-| N9 | 웹 시연 모드 1280×720에서 주행 화면 성장 단계 글자가 13.7px로 9장 기준(16px)보다 작음 (앱 모드는 16px) | 웹 시연 모드 1280×720에서 성장 단계 글자 13.7px → 16px 이상으로 | `hmi.css` |
+| N9 ✅ 완료 | 웹 시연 모드 1280×720에서 주행 화면 성장 단계 글자가 13.7px로 9장 기준(16px)보다 작음 (앱 모드는 16px) | 웹 시연 모드 1280×720에서 성장 단계 글자 13.7px → 16px 이상으로. **완료(2026-11-25)**: `.drive-stage-label` 최소 16px. 웹 시연에서 대사는 한 줄로 고정하고, 자리가 모자라면 성장 단계가 아랫줄로 내려감. 타이어 대사를 "발이 아파… 타이어 봐줄래?"로 줄여 웹 1280×720 12가지 상황 모두 대사·성장 단계가 한 줄 | `hmi.css`, `hmi-app.js` |
 | N10 (팀원1) | Java가 마지막 차량 패킷을 1개(`latestVehiclePacket`)만 기억함. 항목이 여러 개가 되면 마지막 항목만 남고, 페이지가 늦게 열릴 때 다른 항목을 못 받음 | 항목(`item`)별로 마지막 패킷을 기억하고, 페이지가 열리면 모두 다시 보내기. `window.__bungbungVehicleItems`도 채우기 ([VEHICLE_BRIDGE_CONTRACT.md](VEHICLE_BRIDGE_CONTRACT.md) 2.6) | `MainActivity.java` |
-| N11 (윤서) | 웹이 차량 값 전체에 `isMock` 하나만 두고, `VehicleProvider.set`이 항상 `isMock:true`로 덮음. 진짜 ODO와 모의 기어처럼 섞이면 구분할 수 없음 | 항목별 출처(`origin: real/mock`)를 두고, 신선도 검사(`signalValid`)와 "모의 데이터" 표시를 항목별로 판단. `isMock`은 옛 저장 데이터 호환용으로 남김 (계약 문서 3.2) | `vehicle.js`, `logic.js`, `hmi-app.js` |
-| N12 (윤서) | ODO 확인 칸(`sdk-distance.js`)이 `source:'pleos-sdk'` 패킷을 모두 ODO로 읽음. 같은 출처로 기어 등 다른 항목이 오면 ODO 오류로 표시됨 | `item`이 `odometerKm`인 패킷만 읽기. `item`이 없는 옛 패킷은 ODO로 처리 (계약 문서 2.1) | `sdk-distance.js` |
+| N11 (윤서) ✅ 완료 | 웹이 차량 값 전체에 `isMock` 하나만 두고, `VehicleProvider.set`이 항상 `isMock:true`로 덮음. 진짜 ODO와 모의 기어처럼 섞이면 구분할 수 없음 | 항목별 출처(`origin: real/mock`)를 두고, 신선도 검사(`signalValid`)와 "모의 데이터" 표시를 항목별로 판단. `isMock`은 옛 저장 데이터 호환용으로 남김 (계약 문서 3.2). **완료(2026-11-25)**: `vehicle.js`에 항목별 `origin`과 `originOf`·`usesMockData`, 패킷 변환 `bridgePatch`(앱에는 아직 연결 안 함). `isMock`은 모든 항목이 mock일 때만 true. `signalValid`는 항목별로 판단(mock은 유효, real은 OK + 15초). "모의 데이터" 표시는 시연 중이거나 mock 값이 하나라도 쓰이면 보임. `origin`은 저장 직전에 빼서 저장 형식은 그대로 (`tests/vehicle-bridge.mjs`) | `vehicle.js`, `logic.js`, `state-machine.js`, `hmi-app.js` |
+| N12 (윤서) ✅ 완료 | ODO 확인 칸(`sdk-distance.js`)이 `source:'pleos-sdk'` 패킷을 모두 ODO로 읽음. 같은 출처로 기어 등 다른 항목이 오면 ODO 오류로 표시됨 | `item`이 `odometerKm`인 패킷만 읽기. `item`이 없는 옛 패킷은 ODO로 처리 (계약 문서 2.1). **완료(2026-11-25)**: `isOdometerPacket`으로 ODO 패킷만 읽고, 다른 항목 패킷은 무시해 마지막 ODO 값을 유지. 늦게 열리면 `__bungbungVehicleItems.odometerKm`을 먼저 읽음 (`tests/vehicle-bridge.mjs`) | `sdk-distance.js` |
 
 ---
 

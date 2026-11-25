@@ -5,25 +5,48 @@ const cleanWarnings=list=>Array.isArray(list)&&list.length<=20&&list.every(w=>w&
 export const baseline=()=>({uxRestricted:false,gear:'P',ignition:'ON',odometerKm:10180,tripDistanceKm:32,tripTimeMin:41,rangeRemainingKm:420,outsideTempC:18,tireWarning:false,headlightOn:false,wiperState:'OFF',safetyWarnings:[],dataStatus:{},isMock:true});
 const numericLimits={odometerKm:[0,999999],tripDistanceKm:[0,2000],tripTimeMin:[0,1440],rangeRemainingKm:[0,1500],outsideTempC:[-40,60]};
 const enums={gear:['P','R','N','D'],ignition:['OFF','ACC','ON','START'],uxRestricted:[true,false],tireWarning:[true,false],headlightOn:[true,false],wiperState:['OFF','INT','LOW','HIGH']};
+const statuses=['OK','LOADING','NO_PERMISSION','UNSUPPORTED','ERROR'];
+export const vehicleKeys=Object.freeze([...Object.keys(numericLimits),...Object.keys(enums),'safetyWarnings']);
+// N11: every item records where its value came from ('real' = Android bridge, 'mock' = defaults/demo/ADB).
+// `origin` lives only in the live value; state-machine strips it before saving, so the saved format is unchanged.
+const allMock=()=>Object.fromEntries(vehicleKeys.map(k=>[k,'mock']));
+// Values without `origin` (old snapshots, fixtures) follow the old single flag: isMock:true means every item is mock.
+export const originOf=(v,key)=>v?.origin?.[key]??(v?.isMock===true?'mock':'real');
+export const usesMockData=v=>vehicleKeys.some(key=>originOf(v,key)==='mock');
 export class VehicleProvider extends EventTarget {
- constructor(snapshot=null){super();this._value=baseline();this.sequence=0;this.set(snapshot||{},false)}
+ constructor(snapshot=null){super();this._value={...baseline(),origin:allMock()};this.sequence=0;this.set(snapshot||{},false)}
  get value(){return structuredClone(this._value)}
- set(patch,notify=true){
-  const next={...this._value,dataStatus:{...this._value.dataStatus},receivedAt:{...this._value.receivedAt}};
+ // options.origin: 'mock' (default) or 'real'. options.receivedAt: the bridge's own receive time (ms); mock values use now.
+ set(patch,notify=true,{origin='mock',receivedAt}={}){
+  const source=origin==='real'?'real':'mock',at=Number.isFinite(receivedAt)?receivedAt:Date.now();
+  const next={...this._value,dataStatus:{...this._value.dataStatus},receivedAt:{...this._value.receivedAt},origin:{...allMock(),...this._value.origin}};
   for(const key of [...Object.keys(numericLimits),...Object.keys(enums)]){
    if(Object.hasOwn(patch,key)){
     const v=patch[key],bounds=numericLimits[key];
     const valid=v===null||(bounds?Number.isFinite(v)&&v>=bounds[0]&&v<=bounds[1]:enums[key].includes(v));
-    next[key]=valid?v:null;next.dataStatus[key]=valid?(v===null?'LOADING':'OK'):'ERROR';next.receivedAt[key]=Date.now();
+    next[key]=valid?v:null;next.dataStatus[key]=valid?(v===null?'LOADING':'OK'):'ERROR';next.receivedAt[key]=at;next.origin[key]=source;
    }
-   if(Object.hasOwn(patch.dataStatus||{},key))next.dataStatus[key]=['OK','LOADING','NO_PERMISSION','UNSUPPORTED','ERROR'].includes(patch.dataStatus[key])?patch.dataStatus[key]:'ERROR';
+   if(Object.hasOwn(patch.dataStatus||{},key)){next.dataStatus[key]=statuses.includes(patch.dataStatus[key])?patch.dataStatus[key]:'ERROR';next.origin[key]=source;}
   }
-  if(Object.hasOwn(patch,'safetyWarnings')){const list=cleanWarnings(patch.safetyWarnings);next.safetyWarnings=list;next.dataStatus.safetyWarnings=list?'OK':'ERROR';next.receivedAt.safetyWarnings=Date.now();}
-  next.isMock=true;next.sequence=++this.sequence;this._value=next;
+  if(Object.hasOwn(patch,'safetyWarnings')){const list=cleanWarnings(patch.safetyWarnings);next.safetyWarnings=list;next.dataStatus.safetyWarnings=list?'OK':'ERROR';next.receivedAt.safetyWarnings=at;next.origin.safetyWarnings=source;}
+  next.isMock=vehicleKeys.every(key=>next.origin[key]==='mock');next.sequence=++this.sequence;this._value=next;
   if(notify)this.dispatchEvent(new CustomEvent('change',{detail:this.value}));
  }
- reset(){this._value=baseline();this.set(baseline())}
+ reset(){this._value={...baseline(),origin:allMock()};this.set(baseline())}
  subscribe(listener){const handler=e=>listener(e.detail);this.addEventListener('change',handler);return()=>this.removeEventListener('change',handler)}
+}
+// Bridge packet (docs/VEHICLE_BRIDGE_CONTRACT.md ch.2) → provider patch. Pure; not wired to the app yet.
+// A packet without `item` is the legacy ODO packet. Safety warnings stay mock (OEM-only permission).
+const legacyStatus=p=>p.state==='live'&&p.connected===true&&p.supported===true?'OK':['connecting','waiting','stopped'].includes(p.state)?'LOADING':p.state==='unsupported'?'UNSUPPORTED':'ERROR';
+export function bridgePatch(packet){
+ if(!packet||typeof packet!=='object'||Array.isArray(packet))return null;
+ const item=packet.item??'odometerKm';
+ if(!vehicleKeys.includes(item)||item==='safetyWarnings')return null;
+ const raw=packet.status??legacyStatus(packet),status=statuses.includes(raw)?raw:'ERROR';
+ const receivedAt=Number.isFinite(packet.receivedAt)&&packet.receivedAt>0?packet.receivedAt:0;
+ // OK: hand over the value and let VehicleProvider range-check it. Anything else: value null + that status.
+ const patch=status==='OK'?{[item]:packet[item]??null}:{[item]:null,dataStatus:{[item]:status}};
+ return {item,patch,receivedAt,origin:'real'};
 }
 export const scenes=[
 ['S1','첫 만남','알에서 태어나는 작은 친구',{...baseline(),odometerKm:10000,tripDistanceKm:0,tripTimeMin:0},'birth'],

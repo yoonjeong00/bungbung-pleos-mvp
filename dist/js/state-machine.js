@@ -1,5 +1,5 @@
-import {derive,readValue} from './logic.js?v=20261125-r1';
-import {FUEL_THRESHOLDS,TEMP_THRESHOLDS} from './vehicle.js?v=20261125-r1';
+import {derive,readValue} from './logic.js?v=20261125-r2';
+import {FUEL_THRESHOLDS,TEMP_THRESHOLDS} from './vehicle.js?v=20261125-r2';
 const eventTypes=['recovery','growth','summary','birth'];
 export function addBadge(s,id,at=Date.now()){
  if(!s.badges.includes(id)){s.badges.push(id);(s.badgeEarnedAt??={})[id]=at}
@@ -34,7 +34,9 @@ export function advance(s,previous,vehicle,{detect=true,now=Date.now()}={}){
   s.lowRangeKm=d.hungry?d.range:null;
   s.pendingGrowthStage=Math.max(s.ackStage||1,d.stage||1);
  }
- s.vehicleSnapshot=structuredClone(vehicle);
+ // N11: per-item `origin` is live-only; leave it out so the saved snapshot keeps its existing format.
+ const {origin,...snapshot}=vehicle;
+ s.vehicleSnapshot=structuredClone(snapshot);
  return d;
 }
 // Activate once, then return the same pending presentation until explicit acknowledgment.

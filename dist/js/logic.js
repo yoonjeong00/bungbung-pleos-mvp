@@ -1,5 +1,5 @@
-import {cleanPetName} from './onboarding.js?v=20261125-r1';
-import {FUEL_THRESHOLDS} from './vehicle.js?v=20261125-r1';
+import {cleanPetName} from './onboarding.js?v=20261125-r2';
+import {FUEL_THRESHOLDS,originOf} from './vehicle.js?v=20261125-r2';
 // TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
 export const stages=[{name:'알',km:0},{name:'아기',km:0},{name:'어린이',km:300},{name:'청소년',km:2000},{name:'어른',km:6000}];
 // Highest stage number comes from the list length (0 = 알 ... 4 = 어른). Keep only stages in `stages`.
@@ -17,7 +17,8 @@ const limits={odometerKm:[0,999999],tripDistanceKm:[0,2000],tripTimeMin:[0,1440]
 export function signalValid(v,k,now=Date.now()){
  const status=v.dataStatus?.[k];
  if(status&&status!=='OK')return false;
- if(v.isMock===true)return true;
+ // N11: judge each item by its own origin. A mock item is always current; a real item must be OK and fresh.
+ if(originOf(v,k)==='mock')return true;
  const at=v.receivedAt?.[k];
  return status==='OK'&&Number.isFinite(at)&&now>=at&&now-at<=15000;
 }
