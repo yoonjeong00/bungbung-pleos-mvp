@@ -21,7 +21,18 @@ public final class DriveValuesSmoke {
   eq("START", DriveValues.ignition(VehicleIgnitionState.START));
   eq(null, DriveValues.ignition(VehicleIgnitionState.UNDEFINED));
   eq(null, DriveValues.ignition(99));
-  System.out.println("PASS AAOS gear/ignition map; unknown never becomes P/ON");
+  num(0.0, DriveValues.rangeKm(0));
+  num(49.5, DriveValues.rangeKm(49500));
+  num(150.0, DriveValues.rangeKm(150000));
+  num(1500.0, DriveValues.rangeKm(1500000));
+  num(null, DriveValues.rangeKm(Float.NaN));
+  num(null, DriveValues.rangeKm(Float.POSITIVE_INFINITY));
+  num(null, DriveValues.rangeKm(-1));
+  num(null, DriveValues.rangeKm(1500001));
+  System.out.println("PASS AAOS gear/ignition map + range meters→km, valid zero, no synthetic default");
+ }
+ private static void num(Double expected, Double actual) {
+  if (!Objects.equals(expected, actual)) throw new AssertionError("Expected " + expected + ", got " + actual);
  }
  private static void eq(String expected, String actual) {
   if (!Objects.equals(expected, actual)) throw new AssertionError("Expected " + expected + ", got " + actual);

@@ -6,6 +6,10 @@ import android.car.VehicleIgnitionState;
 /** Convert only known, documented AAOS values. Unknown data stays unknown. */
 final class DriveValues {
  private DriveValues() {}
+ // AAOS reports meters; the web contract accepts finite km in the inclusive 0..1500 range.
+ static Double rangeKm(float meters) {
+  return Float.isFinite(meters) && meters >= 0 && meters <= 1500000f ? meters / 1000.0 : null;
+ }
  static String gear(int raw) {
   return switch (raw) {
    case VehicleGear.GEAR_PARK -> "P";
