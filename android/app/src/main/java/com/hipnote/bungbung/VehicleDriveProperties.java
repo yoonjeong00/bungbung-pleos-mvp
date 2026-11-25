@@ -24,6 +24,9 @@ final class VehicleDriveProperties {
  private final Handler main = new Handler(Looper.getMainLooper());
  private final HandlerThread thread = new HandlerThread("bungbung-car-properties");
  private final Handler worker;
+ // A blocking informational read must not sit ahead of a gear change.
+ private final HandlerThread rangeThread = new HandlerThread("bungbung-car-range");
+ private final Handler rangeWorker;
  private final Signal gear = new Signal("gear", VehiclePropertyIds.GEAR_SELECTION,
      Car.PERMISSION_POWERTRAIN, Integer.class, true);
  private final Signal ignition = new Signal("ignition", VehiclePropertyIds.IGNITION_STATE,
@@ -31,7 +34,8 @@ final class VehicleDriveProperties {
  // Range is not a fast safety signal. Periodic reads avoid subscribing to a continuous property.
  private final Signal range = new Signal("rangeRemainingKm", VehiclePropertyIds.RANGE_REMAINING,
      Car.PERMISSION_ENERGY, Float.class, false);
- private final Signal[] signals = {gear, ignition, range};
+ private final Signal[] fastSignals = {gear, ignition};
+ private final Signal[] allSignals = {gear, ignition, range};
  // Set only on the main thread. A stop/disconnect invalidates pending IO immediately.
  private volatile int generation;
  private CarPropertyManager manager;
@@ -44,14 +48,21 @@ final class VehicleDriveProperties {
   this.sink = sink;
   thread.start();
   worker = new Handler(thread.getLooper());
+  rangeThread.start();
+  rangeWorker = new Handler(rangeThread.getLooper());
  }
 
  /** A null service invalidates every property, with no guessed replacements. Main thread only. */
  void setService(Car ready, String status, String state, String message, String via) {
   int epoch = ++generation;
-  for (Signal signal : signals) deliver(signal.item, null, status, state, message, via,
+  for (Signal signal : allSignals) deliver(signal.item, null, status, state, message, via,
       false, false, "UNSUPPORTED".equals(status) || "NO_PERMISSION".equals(status) ? "NONE" : "UNKNOWN",
       0, 0, 0);
+  rangeWorker.removeCallbacksAndMessages(null);
+  rangeWorker.post(() -> {
+   reset(range);
+   if (ready != null && epoch == generation) bindRange(ready, epoch);
+  });
   worker.removeCallbacksAndMessages(null);
   worker.post(() -> {
    unbind();
@@ -83,11 +94,11 @@ final class VehicleDriveProperties {
    poll = new Runnable() {
     @Override public void run() {
      if (epoch != generation) return;
-     for (Signal signal : signals) refresh(signal, epoch, "heartbeat");
+     for (Signal signal : fastSignals) refresh(signal, car, manager, listener, epoch, "heartbeat");
      if (epoch == generation) worker.postDelayed(this, VehicleUxBridge.HEARTBEAT_MS);
     }
    };
-   for (Signal signal : signals) refresh(signal, epoch, "read");
+   for (Signal signal : fastSignals) refresh(signal, car, manager, listener, epoch, "read");
    if (epoch == generation) worker.postDelayed(poll, VehicleUxBridge.HEARTBEAT_MS);
   } catch (RuntimeException e) {
    boolean denied = e instanceof SecurityException;
@@ -106,11 +117,41 @@ final class VehicleDriveProperties {
   worker.postAtTime(() -> {
    if (epoch != generation) return;
    ++signal.updates;
-   refresh(signal, epoch, "listener");
+   refresh(signal, car, manager, listener, epoch, "listener");
   }, signal, android.os.SystemClock.uptimeMillis());
  }
 
- private void refresh(Signal signal, int epoch, String via) {
+ private void bindRange(Car ready, int epoch) {
+  try {
+   if (!ready.isConnected()) {
+    send(range, null, "ERROR", "error", "차량 속성 서비스 연결 끊김", "lifecycle", false, epoch);
+    return;
+   }
+   Object service = ready.getCarManager(Car.PROPERTY_SERVICE);
+   if (!(service instanceof CarPropertyManager)) {
+    send(range, null, "UNSUPPORTED", "unsupported", "차량 속성 읽기 미지원", "capability", true, epoch);
+    return;
+   }
+   CarPropertyManager rangeManager = (CarPropertyManager) service;
+   Runnable rangePoll = new Runnable() {
+    @Override public void run() {
+     if (epoch != generation) return;
+     refresh(range, ready, rangeManager, null, epoch, "heartbeat");
+     if (epoch == generation) rangeWorker.postDelayed(this, VehicleUxBridge.HEARTBEAT_MS);
+    }
+   };
+   refresh(range, ready, rangeManager, null, epoch, "read");
+   if (epoch == generation) rangeWorker.postDelayed(rangePoll, VehicleUxBridge.HEARTBEAT_MS);
+  } catch (RuntimeException e) {
+   boolean denied = e instanceof SecurityException;
+   send(range, null, denied ? "NO_PERMISSION" : "ERROR", "error",
+       denied ? "주행 가능 거리 읽기 권한 없음" : "차량 속성 서비스 오류", "capability", false, epoch);
+   Log.w(TAG, "Cannot open read-only range", e);
+  }
+ }
+
+ private void refresh(Signal signal, Car car, CarPropertyManager manager,
+                      CarPropertyManager.CarPropertyEventCallback listener, int epoch, String via) {
   if (epoch != generation || manager == null) return;
   try {
    if (!car.isConnected()) {
@@ -165,7 +206,7 @@ final class VehicleDriveProperties {
 
  private void rows(Object value, String status, String state, String message, String via,
                   boolean connected, int epoch) {
-  for (Signal signal : signals) send(signal, value, status, state, message, via, connected, epoch);
+  for (Signal signal : fastSignals) send(signal, value, status, state, message, via, connected, epoch);
  }
 
  private void send(Signal signal, Object value, String status, String state, String message,
@@ -196,24 +237,31 @@ final class VehicleDriveProperties {
  private void unbind() {
   if (poll != null) worker.removeCallbacks(poll);
   poll = null;
-  for (Signal signal : signals) {
+  for (Signal signal : fastSignals) {
    if (manager != null && listener != null && signal.cleanup) {
     try { manager.unregisterCallback(listener, signal.id); }
     catch (RuntimeException e) { Log.w(TAG, "Unsubscribe " + signal.item, e); }
    }
-   signal.registered = signal.supported = signal.cleanup = false;
-   signal.previous = null;
-   signal.updates = signal.changes = 0;
+   reset(signal);
   }
   listener = null;
   manager = null;
   car = null;
  }
 
+ private static void reset(Signal signal) {
+  signal.registered = signal.supported = signal.cleanup = false;
+  signal.previous = null;
+  signal.updates = signal.changes = 0;
+ }
+
  void close() {
   ++generation;
   worker.removeCallbacksAndMessages(null);
   worker.post(() -> { unbind(); thread.quitSafely(); });
+  rangeWorker.removeCallbacksAndMessages(null);
+  // An in-flight read may finish, but its old generation cannot publish.
+  rangeThread.quitSafely();
  }
 
  private static final class Signal {
