@@ -3,7 +3,8 @@
 const params=new URLSearchParams(location.search);
 if(params.has('android')||params.has('embedded'))document.body.classList.add('embedded');
 if(params.has('android'))document.body.classList.add('android-app');
-import('./hmi-app.js?v=20261115-r7').catch(error=>{
+if(params.get('record')==='1')document.body.classList.add('recording-mode');
+import('./hmi-app.js?v=20261125-r1').catch(error=>{
  console.error('Bungbung initialization failed',error);
  const host=document.querySelector('#screen-body');
  if(!host)return;
