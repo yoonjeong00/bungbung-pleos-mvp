@@ -281,7 +281,7 @@
 | `uxRestricted` | 주행 제한 여부 | CarUxRestrictions | true / false / null | P0 | 모의 (CarUxRestrictions 미연결) | △ 진단 앱에서 받음, 마이카펫 앱 미확인 |
 | `gear` | 기어 | GEAR_SELECTION | P, R, N, D | P0 | 모의 | △ 진단 앱에서 P·D·R·N 받음, 마이카펫 앱 미확인 |
 | `ignition` | 시동 | IGNITION_STATE | OFF, ACC, ON, START | P0 | 모의. ON이 아니면 제한 상태로 처리 | 미확인 |
-| `odometerKm` | 누적 주행 거리 | Odometer SDK | km | P0 | SDK 연동 작업 중 (verify/pleos-odometer) | ✅ Virtual Console에서 바꾸면 앱이 받음 |
+| `odometerKm` | 누적 주행 거리 | Odometer SDK | km | P0 | SDK로 읽음, 확인 칸에만 표시. 성장 계산에는 아직 안 씀 | ✅ Virtual Console에서 바꾸면 앱이 받음 |
 | `tripDistanceKm` | 이번 주행 거리 | Odometer SDK | km | P0 | 모의 | 미확인 |
 | `tripTimeMin` | 이번 주행 시간 | Odometer SDK | 분 | P0 | 모의 | 미확인 |
 | `rangeRemainingKm` | 주행 가능 거리 | RANGE_REMAINING (원본 m) | km, 0~1,500 | P0 | 모의 (km로 받음) | 미확인 |
@@ -394,6 +394,9 @@
 | N7 ✅ 완료 | 성장 기준 거리(300/2,000/6,000)가 3곳에 따로 있음: 단계 목록(`stages`), 단계 계산(`derive`), 옛 저장값 변환(`load`) | 단계 목록(`stages`) 한곳만 보고 계산하게. **완료(2026-11-24)**: `stageForDistance`(단계 목록만 보고 지나온 마지막 단계, 알 0은 돌려주지 않음)를 만들고 단계 계산(`derive`)과 옛 저장값 변환(`load`)이 모두 사용. `load`의 최고 단계 4도 `MAX_STAGE`(목록 길이 − 1)로 바꿈. 값은 그대로라 기존 사용자 데이터에 영향 없음 (`tests/growth-stages.mjs`로 확인) | `logic.js` |
 | N8 ✅ 완료 | 정차 화면 주행 가능 거리 상세의 배고픔 문구("토토가 배고파요")가 `logic.js`의 50km 하나만 씀 | `FUEL_THRESHOLDS` 3단계(연료 부족/배고픔/충분)에 맞추기. **N5와 함께 진행**. **완료(2026-11-24)**: `FUEL_THRESHOLDS`로 3단계 — 50km 미만 "배고파… 주유소 들를까?", 150km 미만 "조금 출출해", 그 이상 "배불러, 든든해!" | `hmi-app.js` |
 | N9 | 웹 시연 모드 1280×720에서 주행 화면 성장 단계 글자가 13.7px로 9장 기준(16px)보다 작음 (앱 모드는 16px) | 웹 시연 모드 1280×720에서 성장 단계 글자 13.7px → 16px 이상으로 | `hmi.css` |
+| N10 (팀원1) | Java가 마지막 차량 패킷을 1개(`latestVehiclePacket`)만 기억함. 항목이 여러 개가 되면 마지막 항목만 남고, 페이지가 늦게 열릴 때 다른 항목을 못 받음 | 항목(`item`)별로 마지막 패킷을 기억하고, 페이지가 열리면 모두 다시 보내기. `window.__bungbungVehicleItems`도 채우기 ([VEHICLE_BRIDGE_CONTRACT.md](VEHICLE_BRIDGE_CONTRACT.md) 2.6) | `MainActivity.java` |
+| N11 (윤서) | 웹이 차량 값 전체에 `isMock` 하나만 두고, `VehicleProvider.set`이 항상 `isMock:true`로 덮음. 진짜 ODO와 모의 기어처럼 섞이면 구분할 수 없음 | 항목별 출처(`origin: real/mock`)를 두고, 신선도 검사(`signalValid`)와 "모의 데이터" 표시를 항목별로 판단. `isMock`은 옛 저장 데이터 호환용으로 남김 (계약 문서 3.2) | `vehicle.js`, `logic.js`, `hmi-app.js` |
+| N12 (윤서) | ODO 확인 칸(`sdk-distance.js`)이 `source:'pleos-sdk'` 패킷을 모두 ODO로 읽음. 같은 출처로 기어 등 다른 항목이 오면 ODO 오류로 표시됨 | `item`이 `odometerKm`인 패킷만 읽기. `item`이 없는 옛 패킷은 ODO로 처리 (계약 문서 2.1) | `sdk-distance.js` |
 
 ---
 
