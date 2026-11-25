@@ -13,7 +13,7 @@ s=initial();advance(s,d,car({gear:'D',tripDistanceKm:0.1,outsideTempC:-3}),{now:
 assert.deepEqual(s.badges,['first','cold']);assert.equal(s.items.filter(x=>x==='scarf').length,1);
 
 // Both a restriction and a red warning suspend distance/recovery/growth/rewards.
-for(const hold of [{uxRestricted:true},{safetyWarnings:red}]){
+for(const hold of [{uxRestricted:null},{safetyWarnings:red}]){ // missing restriction signal, red warning
  s=initial();d=advance(s,null,car({odometerKm:10299,rangeRemainingKm:49}));
  const before=structuredClone(s);
  d=advance(s,d,car({...hold,gear:'D',odometerKm:10600,rangeRemainingKm:620,tripDistanceKm:100,outsideTempC:-3}));

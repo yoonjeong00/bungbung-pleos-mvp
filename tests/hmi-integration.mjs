@@ -16,7 +16,8 @@ const previews=['home','growth','badges','closet','recovery','summary','rain','h
 const documentListeners={};const windowListeners={};
 globalThis.document={hidden:false,body:node('body'),querySelector:node,querySelectorAll(selector){if(selector==='[data-preview]')return previews;if(selector==='.room-stage .bubble')return [...node('.room-stage').children];return [];},createElement:()=>new Element(),addEventListener:(type,fn)=>documentListeners[type]=fn};
 globalThis.window={addEventListener:(type,fn)=>windowListeners[type]=fn};
-globalThis.location={search:'?android=1'};
+// ?mock=1 keeps the Android layout on mock data (live mode is covered by tests/web-connector.mjs).
+globalThis.location={search:'?android=1&mock=1'};
 node('#manual').elements=Object.fromEntries(['gear','ignition','odometerKm','rangeRemainingKm','outsideTempC','tripDistanceKm','tripTimeMin','uxRestricted'].map(k=>[k,{value:''}]));
 let formValues={};globalThis.FormData=class{get(k){return formValues[k];}};
 const saved={...initial(),onboardingComplete:true,hat:'scarf',badges:['first'],vehicleSnapshot:{...baseline(),odometerKm:10025}};
@@ -52,7 +53,8 @@ manual({gear:'P',odometerKm:'10300'});assert.match(node('#screen-body').innerHTM
 click('confirm');click('pet');assert.equal(node('.room-stage').children.length,1);
 document.hidden=true;documentListeners.visibilitychange();assert.equal(node('.room-stage').children.length,0,'background transition cancels touch presentation');
 document.hidden=false;documentListeners.visibilitychange();click('pet');manual({gear:'D'});assert.equal(node('.room-stage').children.length,0,'leaving P cancels touch');
-manual({ignition:'OFF'});assert.match(node('#screen-body').innerHTML,/차량 상태를 확인/,'OFF fails closed');
+manual({uxRestricted:'null'});assert.match(node('#screen-body').innerHTML,/차량 상태를 확인/,'missing restriction signal fails closed');
+manual({ignition:'OFF'});assert.doesNotMatch(node('#screen-body').innerHTML,/차량 상태를 확인/,'ignition is display-only (spec 3.1)');
 assert.equal(storage.get('bungbung-v1'),before,'scenario and manual controls must not overwrite the saved pet');
 node('#demo-return').onclick();assert.match(node('#screen-body').innerHTML,/25 km/);
 
