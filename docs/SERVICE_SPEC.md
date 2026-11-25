@@ -278,22 +278,22 @@
 
 | 내부 이름 | 뜻 | 출처 (AAOS / Pleos SDK) | 단위·범위 | 우선 | 현재 연결 | 에뮬레이터 검증 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `uxRestricted` | 주행 제한 여부 | CarUxRestrictions | true / false / null | P0 | 모의 (CarUxRestrictions 미연결) | △ 진단 앱에서 받음, 마이카펫 앱 미확인 |
-| `gear` | 기어 | GEAR_SELECTION | P, R, N, D | P0 | 모의 | △ 진단 앱에서 P·D·R·N 받음, 마이카펫 앱 미확인 |
-| `ignition` | 시동 | IGNITION_STATE | OFF, ACC, ON, START | P0 | 모의. ON이 아니면 제한 상태로 처리 | 미확인 |
-| `odometerKm` | 누적 주행 거리 | Odometer SDK | km | P0 | SDK로 읽음, 확인 칸에만 표시. 성장 계산에는 아직 안 씀 | ✅ Virtual Console에서 바꾸면 앱이 받음 |
+| `uxRestricted` | 주행 제한 여부 | CarUxRestrictions | true / false / null | P0 | 모의 (CarUxRestrictions 미연결) | △ 진단 앱에서 받음(CarUxRestrictionsManager). 속도 0에서 P 제한 없음, D·R 제한 있음. 마이카펫 앱 미확인 |
+| `gear` | 기어 | GEAR_SELECTION | P, R, N, D | P0 | 모의 | △ 진단 앱에서 P·D·R·N 받음(GEAR_SELECTION + CAR_POWERTRAIN). 마이카펫 APK는 권한 추가 후 재확인 |
+| `ignition` | 시동 | IGNITION_STATE | OFF, ACC, ON, START | P0 | 모의. ON이 아니면 제한 상태로 처리 | 미확인 (콘솔 가이드에 시동 변경 항목 없음) |
+| `odometerKm` | 누적 주행 거리 | Odometer SDK | km | P0 | SDK로 읽음, 확인 칸에만 표시. 성장 계산에는 아직 안 씀 | ✅ 콘솔 2→3km 변경이 마이카펫 앱에 반영. 실차 단위·소수점 미확인 |
 | `tripDistanceKm` | 이번 주행 거리 | Odometer SDK | km | P0 | 모의 | 미확인 |
 | `tripTimeMin` | 이번 주행 시간 | Odometer SDK | 분 | P0 | 모의 | 미확인 |
-| `rangeRemainingKm` | 주행 가능 거리 | RANGE_REMAINING (원본 m) | km, 0~1,500 | P0 | 모의 (km로 받음) | 미확인 |
-| `outsideTempC` | 바깥 기온 | ENV_OUTSIDE_TEMPERATURE | °C, -40~60 | P0 | 모의 | 미확인 |
+| `rangeRemainingKm` | 주행 가능 거리 | RANGE_REMAINING (원본 m) | km, 0~1,500 | P0 | 모의 (km로 받음) | 미확인 (콘솔 변경 가능, 원본 m) |
+| `outsideTempC` | 바깥 기온 | ENV_OUTSIDE_TEMPERATURE | °C, -40~60 | P0 | 모의 | 미확인 (콘솔 변경 가능 여부 미확인) |
 | `dataStatus` | 항목별 수신 상태 | 앱 내부 | OK, LOADING, NO_PERMISSION, UNSUPPORTED, ERROR | P0 | 구현 (`vehicle.js`). OK가 아니면 그 값을 쓰지 않음 | 해당 없음 |
 | `isMock` | 모의 데이터 여부 | 앱 내부 | true / false | P0 | 모의 | 해당 없음 |
-| `wiperState` | 와이퍼 | Wiper SDK | OFF, INT, LOW, HIGH | P1 | 모의 | 미확인 |
-| `headlightOn` | 전조등 | Light SDK | true / false | P1 | 모의 | 미확인 |
-| `tireWarning` | 타이어 공기압 경고 | Tire SDK | true / false | P1 | 모의 (읽기 권한 확인 필요) | 미확인 |
-| `safetyWarnings` | 차량 경고 목록 (노란·빨간 등급) | Safety SDK | 목록 | P1 | 모의 (읽기 권한 확인 필요) | ✕ 일반 권한으로 막힘 → 당분간 시연 모드에서만 |
+| `wiperState` | 와이퍼 | Wiper SDK | OFF, INT, LOW, HIGH | P1 | 모의 | 미확인 (콘솔 변경 가능) |
+| `headlightOn` | 전조등 | Light SDK | true / false | P1 | 모의 | 미확인 (콘솔 변경 가능) |
+| `tireWarning` | 타이어 공기압 경고 | Tire SDK | true / false | P1 | 모의 (읽기 권한 확인 필요) | 미확인 (콘솔에서 TPMS 경고등 변경 가능, 경고 API 권한 확인 필요) |
+| `safetyWarnings` | 차량 경고 목록 (노란·빨간 등급) | Safety SDK | 목록 | P1 | 모의 (읽기 권한 확인 필요) | ✕ CAR_SAFETY로도 SecurityException. OEM 전용 PRIVATE_CAR_SAFETY 필요 → 모의 유지 |
 
-- 에뮬레이터 검증은 팀원1 확인 결과다. ADB 시연은 예전 빌드에서 작동했고 현재 빌드는 다시 확인이 필요하다. 자세한 기록과 Android → 웹 전달 방식은 [VEHICLE_BRIDGE_CONTRACT.md](VEHICLE_BRIDGE_CONTRACT.md)를 본다.
+- 에뮬레이터 검증은 팀원1 확인 결과다. ADB 시연은 이전 APK에서 작동했고, 최신 APK에서는 다시 확인이 필요하다. 자세한 기록과 Android → 웹 전달 방식은 [VEHICLE_BRIDGE_CONTRACT.md](VEHICLE_BRIDGE_CONTRACT.md)를 본다.
 
 - 모든 값에는 수신 시각을 함께 담고, 값이 없으면 0이 아니라 null로 둔다.
 - 위치: Fused Location 미지원, Vehicle Data API는 유럽 전용 → 위치·외부 날씨는 쓰지 않는다. 날씨는 외기온·와이퍼·라이트로만 표현한다.

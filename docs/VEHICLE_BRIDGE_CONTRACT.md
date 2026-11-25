@@ -2,9 +2,23 @@
 
 > 작성: 2026-11-25 · 기준 코드: main `778f01d`
 > Android(Java)가 읽은 차량 값을 웹 화면(WebView)에 넘기는 **약속(계약)**을 적은 문서다. 서비스 기준은 [SERVICE_SPEC.md](SERVICE_SPEC.md)를 따른다.
-> 1장은 **지금 있는 그대로**, 2장부터는 **앞으로의 제안**이다. 제안은 코드에 아직 없다.
+> 1장은 **지금 있는 그대로**, 2장부터는 **앞으로의 약속**이다. 2장 이후 내용은 코드에 아직 없다.
 >
-> 역할(기준서 13.1): **Java 연결은 팀원1**, **웹 연결기·성장 계산·테스트는 윤서**.
+> 역할(기준서 13.1): **Java 연결은 팀원1(윤정)**, **웹 연결기·성장 계산·테스트는 윤서**.
+
+## 0. 확정된 결정 (2026-11-25, 윤정 답변 반영)
+
+| 주제 | 결정 | 자세히 |
+| --- | --- | --- |
+| 패킷 모양 | 2장 형식(`item`·`status` 추가, `OK`가 아니면 값 `null`)을 Java에서 그대로 보냄 | 2.1~2.3 |
+| 주행 제한 판단 | **`CarUxRestrictionsManager` 신호로만 판단**한다. 기어·속도로 추정하지 않는다 | 2.4, 3.4 |
+| Java 재조회 | 주행 제한·기어·시동은 **5초마다 다시 조회**. **조회에 성공할 때만 `receivedAt`을 갱신**하고, 연결·조회에 실패하면 값 `null`과 해당 상태를 보냄 | 2.6 |
+| 웹 만료 | 웹은 새 패킷이 없어도 **자체 타이머로 15초 만료**를 처리함 | 3.4 |
+| ODO 유효 시간 | **지금 45초 기준을 유지**. 연결 끊김을 따로 확실히 감지할 수 있게 되면 다시 정함 | 3.3 |
+| 차량 경고 | OEM 전용 권한(`PRIVATE_CAR_SAFETY`)이 필요해 **모의로 유지**. 특권 권한은 요청하지 않음 | 2.5, 4장 |
+| `__bungbungVehicle` | **ODO 전용 호환용**으로만 남김. 다른 항목은 `__bungbungVehicleItems` | 2.6 |
+| 실차 모드 시작 | **기어·시동이 연결되기 전에는 실차 모드 화면을 모의 기본값으로 열지 않음**. 주행 제한 신호가 들어오는 것부터 확인 | 3.1 |
+| 작업 순서 | 윤정: 주행 제한 Java 연결 + N10 · 윤서: 웹 연결기 + N12 (병행) | 기준서 13.3 |
 
 ---
 
@@ -82,7 +96,7 @@ window.dispatchEvent(new CustomEvent('bungbung-vehicle', { detail: window.__bung
 
 ---
 
-## 2. 제안: 항목을 늘릴 때의 패킷 모양
+## 2. 약속: 항목을 늘릴 때의 패킷 모양 (윤정 동의)
 
 ### 2.1 원칙
 - **신호 이름과 통로는 그대로**: `bungbung-vehicle` 신호, `evaluateJavascript`.
@@ -127,10 +141,12 @@ window.dispatchEvent(new CustomEvent('bungbung-vehicle', { detail: window.__bung
 
 | `item` | 값 | 읽는 곳 (Android) | Java에서 바꾸는 규칙 |
 | --- | --- | --- | --- |
-| `uxRestricted` | `true` / `false` | `CarUxRestrictionsManager`의 현재 제한 (`isRequiresDistractionOptimization()`) | 제한이 걸려 있으면 `true`. 모르면 `null` + `LOADING`/`ERROR` |
-| `gear` | `"P"` · `"R"` · `"N"` · `"D"` | 차량 속성 `GEAR_SELECTION` (권한 `CAR_POWERTRAIN`) 또는 Pleos SDK (팀원1 확인) | PARK→`P`, REVERSE→`R`, NEUTRAL→`N`, DRIVE와 1~9단→`D`. 그 밖(UNKNOWN 등)은 `null` + `ERROR` |
-| `ignition` | `"OFF"` · `"ACC"` · `"ON"` · `"START"` | 차량 속성 `IGNITION_STATE` (권한 `CAR_POWERTRAIN`) | LOCK·OFF→`OFF`, ACC→`ACC`, ON→`ON`, START→`START`. UNDEFINED는 `null` + `ERROR` |
-| `odometerKm` | km 숫자 (0~999,999) | Pleos `Odometer` (지금 있음) | 지금 그대로 + `item`, `status` 칸 추가 |
+| `uxRestricted` | `true` / `false` | AAOS `CarUxRestrictionsManager`의 현재값과 변경 콜백에서 `isRequiresDistractionOptimization()`. 별도 특권 권한 없음 (진단 앱 확인) | 제한이 걸려 있으면 `true`. 모르면 `null` + `LOADING`/`ERROR`. **기어·속도로 추정하지 않음** |
+| `gear` | `"P"` · `"R"` · `"N"` · `"D"` | AAOS `CarPropertyManager`의 `GEAR_SELECTION`, 권한 `android.car.permission.CAR_POWERTRAIN` (일반 권한, 진단 앱 확인) | PARK→`P`, REVERSE→`R`, NEUTRAL→`N`, DRIVE와 1~9단→`D`. 그 밖(UNKNOWN 등)은 `null` + `ERROR` |
+| `ignition` | `"OFF"` · `"ACC"` · `"ON"` · `"START"` | AAOS `CarPropertyManager`의 `IGNITION_STATE`, 권한 `CAR_POWERTRAIN` (문서상, 실제 수신 미확인) | LOCK·OFF→`OFF`, ACC→`ACC`, ON→`ON`, START→`START`. UNDEFINED는 `null` + `ERROR` |
+| `odometerKm` | km 숫자 (0~999,999). **소수점은 자르지 않음** | Pleos `Odometer`, 권한 `pleos.car.permission.CAR_DRIVE` (지금 있음) | 지금 그대로 + `item`, `status` 칸 추가 |
+
+- 마이카펫 APK는 지금 `pleos.car.permission.CAR_DRIVE`만 선언한다. 기어·시동을 읽으려면 매니페스트에 `android.car.permission.CAR_POWERTRAIN`을 추가하고, **마이카펫 APK에서 다시 확인**한다.
 
 `source` 값: Pleos SDK로 읽으면 `pleos-sdk`, Android 차량 속성·`CarUxRestrictionsManager`로 읽으면 `aaos-car`.
 
@@ -138,23 +154,27 @@ window.dispatchEvent(new CustomEvent('bungbung-vehicle', { detail: window.__bung
 
 | `item` | 값 | 비고 |
 | --- | --- | --- |
-| `rangeRemainingKm` | km 숫자 (0~1,500) | 원본이 m면 Java에서 ÷1000 |
-| `outsideTempC` | °C 숫자 (-40~60) | |
+| `rangeRemainingKm` | km 숫자 (0~1,500) | 콘솔 원본은 m → Java에서 ÷1000. 권한 후보 `pleos.car.permission.CAR_ENERGY` |
+| `outsideTempC` | °C 숫자 (-40~60) | 권한 후보 AAOS `android.car.permission.CAR_EXTERIOR_ENVIRONMENT`. **공조 설정 온도와 다른 값**이니 섞지 않음 |
 | `tripDistanceKm`, `tripTimeMin` | 숫자 | SDK가 안 주면 웹에서 시동 ON 때 ODO·시각으로 계산 (별도 결정) |
-| `wiperState` | `"OFF"` · `"INT"` · `"LOW"` · `"HIGH"` | |
-| `headlightOn` | `true` / `false` | |
-| `tireWarning` | `true` / `false` | |
-| `safetyWarnings` | `[{id, level:"red"\|"yellow", label}]` (최대 20개) | **일반 권한으로 막힘 → 당분간 시연 모드에서만** (13.1) |
+| `wiperState` | `"OFF"` · `"INT"` · `"LOW"` · `"HIGH"` | 권한 후보 `pleos.car.permission.CAR_WINDOWS` |
+| `headlightOn` | `true` / `false` | 권한 후보 `pleos.car.permission.CAR_LIGHTS` |
+| `tireWarning` | `true` / `false` | 타이어 도메인 권한 후보 `pleos.car.permission.CAR_SAFETY`. TPMS 경고 API의 권한은 따로 확인 필요 |
+| `safetyWarnings` | `[{id, level:"red"\|"yellow", label}]` (최대 20개) | **OEM 전용 `PRIVATE_CAR_SAFETY`가 필요해 모의로 유지** (4장). 특권 권한은 요청하지 않음 |
+
+권한 "후보"는 Pleos·AAOS 문서 기준이다. 앱에서 실제로 받는지는 아직 확인하지 않았다.
 
 ### 2.6 Java에서 함께 바꿀 것 (팀원1)
-1. **항목별 마지막 패킷 기억**: 지금은 패킷 1개(`latestVehiclePacket`)만 기억한다. 항목이 여러 개면 마지막 항목만 남는다. 항목 이름별로 마지막 패킷을 기억하고, 페이지가 열리면 **모두** 다시 보낸다.
-2. **웹의 늦은 준비 대비**: `window.__bungbungVehicle`은 ODO 호환용으로 남기고, 항목별 묶음 `window.__bungbungVehicleItems = { gear: {...}, uxRestricted: {...}, ... }`도 함께 채운다.
-3. **살아 있음 알림(heartbeat)**: 주행 제한·기어·시동은 값이 안 바뀌어도 **5초마다** 같은 값을 `via:"heartbeat"`로 다시 보낸다(웹은 15초 넘게 소식이 없으면 막음, 3.4).
+1. **항목별 마지막 패킷 기억 (N10)**: 지금은 패킷 1개(`latestVehiclePacket`)만 기억한다. 항목이 여러 개면 마지막 항목만 남는다. 항목 이름별로 마지막 패킷을 기억한다. 페이지가 열리면 **전체 묶음(`__bungbungVehicleItems`)을 먼저 채운 뒤** 항목마다 `bungbung-vehicle` 신호를 보낸다.
+2. **웹의 늦은 준비 대비**: `window.__bungbungVehicle`은 **ODO 전용 호환용**으로만 남긴다(ODO 패킷만 넣음). 다른 항목은 항목별 묶음 `window.__bungbungVehicleItems = { odometerKm: {...}, gear: {...}, uxRestricted: {...}, ... }`에만 넣는다.
+3. **5초 재조회**: 기어·시동은 명세상 **값이 바뀔 때만** 알림이 오고, 주행 제한도 **제한이 바뀔 때만** 콜백이 온다. 고정값이 주기적으로 온다고 기대하면 안 된다. 그래서 Java가 주행 제한·기어·시동을 **5초마다 다시 조회**해서 보낸다(`via:"read"`).
+   - **조회에 성공할 때만 `receivedAt`을 갱신**한다. 값이 안 바뀌었어도 성공했으면 갱신한다.
+   - 연결·조회에 실패하면 값 `null`과 해당 `status`(`ERROR`·`NO_PERMISSION` 등)를 보낸다. 실패한 패킷에 예전 `receivedAt`을 새 시각으로 바꿔 넣지 않는다.
 4. **앱이 안 보일 때**: `stop` 때 항목마다 `status:"LOADING"`, 값 `null` 패킷을 한 번 보낸다.
 
 ---
 
-## 3. 웹이 값을 받아 쓰는 규칙 (제안, 윤서)
+## 3. 웹이 값을 받아 쓰는 규칙 (윤서)
 
 ### 3.1 실차 모드와 시연 모드
 
@@ -165,29 +185,33 @@ window.dispatchEvent(new CustomEvent('bungbung-vehicle', { detail: window.__bung
 | 저장 | `session.checkpoint`로 저장 | **저장 안 함** (지금 `DemoSession`과 같음) |
 | 돌아올 때 | — | "내 토토로 돌아가기" 때 기억해 둔 실제 값을 다시 적용. 단 3.3·3.4의 유효 조건을 다시 검사 |
 
+- **기어·시동이 연결되기 전에는 실차 모드 화면을 모의 기본값으로 열지 않는다.** 실차 모드에서 기어·시동 값이 없으면 모의 기본값(`P`, `ON`)으로 채우지 않고, 값 없음(`LOADING`)으로 두어 화면을 막는다(3.4). 첫 단계는 **주행 제한 신호가 들어오는지 확인**하는 것이다.
 - 실제 값은 **저장 데이터에 넣지 않는다.** 저장하는 건 부화 때 ODO(`baseOdo`) 같은 최소 값뿐이다(기준서 6.4). 지금 `load`는 모의 스냅샷(`isMock:true`)만 받아들이므로, 이 규칙과 맞다.
 - 시연 값(예: 2,180km, 청소년)이 진짜 토토에 덮어써지면 안 된다. 실차 모드에서도 저장은 반드시 `session.checkpoint`를 거친다.
 
 ### 3.2 항목마다 진짜·모의 표시
 - 지금은 차 데이터 전체에 `isMock` 하나만 있고, `VehicleProvider.set`이 항상 `isMock:true`로 덮는다. 진짜 ODO와 모의 기어처럼 **섞이면 구분할 수 없다.**
-- 제안: 항목별 출처 `origin: { gear: "real", odometerKm: "real", rangeRemainingKm: "mock", ... }`를 둔다.
+- 방법: 항목별 출처 `origin: { gear: "real", odometerKm: "real", rangeRemainingKm: "mock", ... }`를 둔다.
   - `"real"`: `bungbung-vehicle`로 받은 값
   - `"mock"`: 기본값, 시연 패널, ADB 시연
 - 화면 구석 "모의 데이터" 표시는 **화면에 쓰인 항목 중 하나라도 `mock`이면** 계속 보인다(기준서 2장 "모의 데이터", 3.2). 모든 항목이 `real`일 때만 표시를 바꾼다(문구는 별도 결정).
 - `isMock`은 옛 저장 데이터 호환을 위해 남겨 둔다.
 
-### 3.3 ODO: 연결이 살아 있으면 마지막 값을 유효로 봄
-- 주차 중에는 ODO가 안 바뀌는 게 정상이다. 변경 알림이 안 와도 값이 오래됐다고 버리지 않는다.
-- **유효 조건**: 마지막 ODO 패킷이 `status:"OK"`(지금 패킷은 `state:"live"`)이고, 그 뒤로 `stopped`·`error`·`unavailable`·`unsupported` 패킷이 오지 않았다.
+### 3.3 ODO: 지금 45초 기준 유지
+- 주차 중에는 ODO가 안 바뀌는 게 정상이다. 그래서 변경 알림만 보지 않고, Java가 15초마다 다시 조회한 값(`via:"read"`)으로 신선함을 유지한다.
+- **유효 조건 (지금 `sdk-distance.js`와 같음)**: `status:"OK"`(지금 패킷은 `state:"live"`)이고, `connected`·`supported`가 `true`이고, 값이 0 이상의 숫자이고, **`receivedAt`이 45초 이내**다.
+- 이 45초 기준은 **연결 끊김을 따로 확실히 감지할 수 있게 될 때까지 그대로 둔다.** 그때 "연결이 살아 있으면 마지막 값 유효"로 바꿀지 다시 정한다.
 - 연결이 끊기면(`stopped`·`error`) ODO는 `null`. 성장 거리는 저장된 최대값(`maxDistanceKm`)을 유지해서 줄어들지 않는다.
-- 바꿀 곳: `sdk-distance.js`의 45초 조건, `logic.js` `signalValid`의 15초 조건은 ODO에 적용하지 않도록 고친다.
+- 바꿀 곳: `logic.js` `signalValid`는 실제 값에 15초를 쓰므로, **ODO에는 45초**를 쓰도록 항목별 기준을 둔다. 안 그러면 15초 조회 간격 사이에 ODO가 사라졌다 나타난다.
 - **ODO를 성장에 연결하는 작업은 부화 때 실제 ODO 저장과 반드시 함께 한다** (기준서 14장. 안 하면 바로 어른이 됨).
 
 ### 3.4 주행 제한 신호를 못 받으면 토토 안내를 시작하지 않음
 - `uxRestricted`, `gear`, `ignition`은 **안전 신호**다. 셋 중 하나라도 아래면 화면을 막는다(지금 `derive`의 `restricted`, "차량 상태를 확인하고 있어요" 화면).
   - `status`가 `OK`가 아님 (`LOADING`, `NO_PERMISSION`, `UNSUPPORTED`, `ERROR`)
-  - 실제 값인데 마지막 수신이 **15초**를 넘음 (Java는 5초마다 heartbeat, 2.6)
+  - 실제 값인데 마지막 `receivedAt`이 **15초**를 넘음 (Java는 5초마다 재조회, 2.6)
   - `uxRestricted`가 `true`, `ignition`이 `ON`이 아님
+- **15초 만료는 웹이 자체 타이머로 처리한다.** 새 패킷이 오지 않아도 웹이 주기적으로(예: 1초마다) 시각을 확인해서, 15초가 지나면 그 항목을 만료로 보고 화면을 막는다. 패킷이 올 때만 검사하면, Java가 멈췄을 때 마지막 "제한 없음" 값이 계속 남는다.
+- **주행 제한은 `uxRestricted` 신호로만 판단한다.** 기어·속도로 제한 여부를 추정하지 않는다. 에뮬레이터에서 D·속도 0에서도 제한이 걸리고, R→N에서도 직전 제한이 유지됐다(4장). 기어 값은 "정차 화면은 P에서만" 규칙에만 쓴다.
 - 앱을 막 켰을 때도 같다. 주행 제한 신호를 처음 받기 전에는 토토 안내를 시작하지 않는다(기준서 2장 "제한 상태", 3.1 "제한·불명").
 - 기어 `D`이고 속도 0(신호 대기)도 주행 중이다. 정차 화면은 `P`에서만 연다.
 
@@ -195,43 +219,69 @@ window.dispatchEvent(new CustomEvent('bungbung-vehicle', { detail: window.__bung
 
 | 파일 | 바꿀 내용 |
 | --- | --- |
-| 새 파일 (예: `vehicle-live.js`) | `bungbung-vehicle`·`__bungbungVehicleItems`를 받아 항목별 값·`status`·`receivedAt`·`origin:"real"`로 바꿔 `VehicleProvider`에 넣음. 시연 중이면 무시 |
-| `vehicle.js` | `set`이 항상 `isMock:true`로 덮는 부분을 항목별 `origin`으로 바꿈 |
-| `logic.js` (`signalValid`) | 항목별 `origin`을 보고 신선도 검사. ODO는 3.3 규칙 |
-| `sdk-distance.js` | `item`이 `odometerKm`가 아닌 패킷은 무시. 안 그러면 기어 패킷을 ODO 오류로 표시함 |
-| `hmi-app.js` | 실차·시연 모드 전환, "모의 데이터" 표시 조건 |
-| `tests/` | 상태 5종, heartbeat 끊김, 시연 중 실제 값 무시·저장 안 함, 옛 ODO 패킷 호환 |
+| 새 파일 (예: `vehicle-live.js`) | `bungbung-vehicle`·`__bungbungVehicleItems`를 받아 항목별 값·`status`·`receivedAt`·`origin:"real"`로 바꿔 `VehicleProvider`에 넣음. 시연 중이면 무시. **15초 만료 자체 타이머** |
+| `vehicle.js` | `set`이 항상 `isMock:true`로 덮는 부분을 항목별 `origin`으로 바꿈 (N11) |
+| `logic.js` (`signalValid`) | 항목별 `origin`을 보고 신선도 검사. 안전 신호 15초, ODO 45초 (3.3) |
+| `sdk-distance.js` | `item`이 `odometerKm`가 아닌 패킷은 무시 (N12). 안 그러면 기어 패킷을 ODO 오류로 표시함 |
+| `hmi-app.js` | 실차·시연 모드 전환, 실차 모드에서 모의 기본값으로 열지 않기, "모의 데이터" 표시 조건 |
+| `tests/` | 상태 5종, 새 패킷 없이 15초 만료, 실패 패킷의 `receivedAt` 미갱신, 시연 중 실제 값 무시·저장 안 함, 옛 ODO 패킷 호환, 기어로 제한을 추정하지 않음 |
 
 ---
 
-## 4. 에뮬레이터 검증 기록 (팀원1 확인)
+## 4. 에뮬레이터 검증 기록 (팀원1 윤정 확인, 2026-11-25 갱신)
 
 | 항목 | 결과 | 확인 방법·메모 |
 | --- | --- | --- |
-| 누적 거리 `odometerKm` | ✅ 앱이 받음 | Pleos Virtual Console에서 값을 바꾸면 마이카펫 앱 SDK 확인 칸에 반영 |
-| 기어 `gear` (P·D·R·N) | △ 진단 앱에서만 받음 | 마이카펫 앱에서는 아직 확인 안 함 |
-| 주행 제한 `uxRestricted` | △ 진단 앱에서만 받음 | 마이카펫 앱에서는 아직 확인 안 함 |
-| 차량 경고 `safetyWarnings` | ✕ 막힘 | 일반 권한으로는 읽을 수 없음 → 당분간 시연 모드에서만 |
-| 시동 `ignition` | 미확인 | |
-| 주행 가능 거리 `rangeRemainingKm` | 미확인 | |
-| 바깥 기온 `outsideTempC` | 미확인 | |
-| 와이퍼 `wiperState` | 미확인 | |
-| 전조등 `headlightOn` | 미확인 | |
-| 타이어 `tireWarning` | 미확인 | |
-| ADB 시연 (`SIMULATE` 인텐트) | △ 예전 빌드에서 작동 | 현재 빌드에서 다시 확인 필요 |
+| 누적 거리 `odometerKm` | ✅ 마이카펫 앱이 받음 | Virtual Console에서 2→3km로 바꾸면 같은 앱 프로세스의 SDK·화면에 2→3으로 반영. 실차 단위는 미확인. 콘솔이 1km 단위라 소수점 수신도 미확인 |
+| 기어 `gear` (P·D·R·N) | △ 진단 앱에서 받음 | `GEAR_SELECTION` + `CAR_POWERTRAIN`. 마이카펫 APK는 권한 미선언 → 권한 추가 후 다시 확인 |
+| 주행 제한 `uxRestricted` | △ 진단 앱에서 받음 | `CarUxRestrictionsManager` 현재값·변경 콜백. 속도 0에서 P는 제한 없음, D·R은 제한 있음(D 0km/h에서도). R→N에서 직전 제한 유지. 마이카펫 앱 미확인 |
+| 차량 경고 `safetyWarnings` | ✕ 막힘 | `pleos.car.permission.CAR_SAFETY`가 있어도 `checkTelltalesCapabilities`·`registerTelltales`·`getTelltalesInfo`가 `SecurityException`으로 거절. `ERROR_SECURITY_PERMISSION` 코드는 아님. SDK 주석상 OEM용 `PRIVATE_CAR_SAFETY` 필요 → 모의 유지 |
+| 시동 `ignition` | 미확인 | Virtual Console 가이드에 시동 변경 항목이 없음. 실제로 오는 값(LOCK/OFF/ACC/ON/START) 미확인 |
+| 주행 가능 거리 `rangeRemainingKm` | 미확인 | 콘솔에서 변경 가능(문서상, 단위 m). 앱 수신 미확인 |
+| 바깥 기온 `outsideTempC` | 미확인 | 콘솔 변경 가능 여부 미확인. 공조 설정 온도와는 다른 값 |
+| 와이퍼 `wiperState` | 미확인 | 콘솔에서 와이퍼 모드 변경 가능(문서상). 앱 수신 미확인 |
+| 전조등 `headlightOn` | 미확인 | 콘솔에서 전조등 모드 변경 가능(문서상). 앱 수신 미확인 |
+| 타이어 `tireWarning` | 미확인 | 콘솔에서 TPMS 경고등 변경 가능(문서상). TPMS 경고 API 권한 별도 확인 필요 |
+| ADB 시연 (`SIMULATE` 인텐트) | △ 이전 APK에서 작동 | 현재 main: 스크립트가 문서대로 인텐트를 만드는 것과 Java 수신 코드는 확인. 최신 APK의 `scene`·`payload` 실동작과 `BungbungSim` 로그는 재검증 전 |
+| 앱 복귀 (백그라운드 → 다시 열기) | △ 일부 확인 | 복귀 후 ODO 표시 재개는 확인. 반복 백그라운드·복귀에서 구독 중복이 없는지는 미검증(실기 테스트로 남김). 코드에는 `onStop` 해제와 이전 연결 콜백 차단이 있음 |
 
 ---
 
-## 5. 팀원1에게 확인할 질문
+## 5. 팀원1에게 확인한 질문과 답 (윤정, 2026-11-25)
 
-1. 진단 앱에서 기어·주행 제한을 읽을 때 쓴 **API와 권한**은 무엇인가요? (Android `GEAR_SELECTION`·`CarUxRestrictionsManager` / Pleos SDK 중 어느 쪽, 권한 문자열)
-2. 그 권한을 **마이카펫 앱 매니페스트**에 넣으면 일반 앱 권한으로 허용되나요, 아니면 시스템·서명 권한이 필요한가요?
-3. 에뮬레이터에서 기어를 바꿀 때 `uxRestricted`도 함께 바뀌나요? D·속도 0(신호 대기)에서 값이 `true`로 유지되나요?
-4. 시동(`IGNITION_STATE`)을 Virtual Console에서 바꿀 수 있나요? 바꿀 수 있다면 어떤 값이 오나요 (LOCK·OFF·ACC·ON·START)?
-5. 기어·주행 제한·시동은 값이 바뀔 때만 알림이 오나요? 주기적으로 오나요? (5초 heartbeat를 Java에서 따로 만들어야 하는지)
-6. 차량 경고(Safety)가 막힐 때 받은 **오류 내용**(예외 이름, `ERROR_SECURITY_PERMISSION` 여부, 필요한 권한)을 적어 줄 수 있나요?
-7. 현재 빌드에서 ADB `SIMULATE` 인텐트(`scene`, `payload`)가 다시 작동하나요? 안 되면 로그(`BungbungSim`)를 받을 수 있나요?
-8. ODO 값의 단위가 km인지 실제 차·에뮬레이터 둘 다에서 확인했나요? 소수점(예: 10180.5)이 오나요?
-9. 앱을 백그라운드로 보냈다가 돌아왔을 때 ODO 재연결과 중복 알림이 없는지 확인했나요?
-10. 주행 가능 거리·기온·와이퍼·전조등·타이어 중 Virtual Console에서 바꿀 수 있는 항목은 무엇인가요? 권한은 각각 무엇인가요?
-11. 2장의 패킷 모양(`item`, `status` 추가, 항목별 마지막 패킷 기억, 5초 heartbeat)으로 Java를 바꾸는 데 문제가 있나요?
+1. **진단 앱에서 기어·주행 제한을 읽을 때 쓴 API와 권한은?**
+   → 둘 다 AAOS 경로예요. 기어는 `CarPropertyManager`의 `GEAR_SELECTION` + `android.car.permission.CAR_POWERTRAIN`이에요. 주행 제한은 `CarUxRestrictionsManager`의 현재값과 변경 콜백에서 `isRequiresDistractionOptimization()`을 읽었어요(Pleos 주행 제한 가이드 참고).
+2. **마이카펫 앱 매니페스트에 넣으면 일반 권한으로 허용되나?**
+   → `CAR_POWERTRAIN`은 AAOS 문서상 일반 권한이고, 진단 앱에서 기어 읽기에 성공했어요. 주행 제한 읽기는 특권 권한을 따로 추가하지 않았어요. 마이카펫 APK는 지금 ODO용 `pleos.car.permission.CAR_DRIVE`만 선언하고 있어서, 기어는 권한을 추가한 뒤 그 APK에서 다시 확인해요. 시동도 문서상 같은 권한이지만 실제 수신은 미확인이에요.
+3. **기어를 바꿀 때 `uxRestricted`도 바뀌나? D·속도 0에서 `true`가 유지되나?**
+   → 에뮬레이터 속도 0에서 P는 제한 없음, D·R은 제한 있음이었어요. D는 0km/h에서도 제한이 걸렸고, R→N에서도 직전 제한이 유지됐어요. **기어·속도로 제한을 추정하지 않고 UX 신호를 따로 읽어야 해요** (0장 결정).
+4. **시동을 Virtual Console에서 바꿀 수 있나? 어떤 값이 오나?**
+   → 공식 Virtual Console 가이드에서 시동 변경 항목을 찾지 못했어요. LOCK/OFF/ACC/ON/START 중 실제로 오는 값도 아직 확인하지 못했어요.
+5. **값이 바뀔 때만 알림이 오나? 주기적으로 오나?**
+   → 기어·시동은 명세상 변경 알림이고, 주행 제한도 제한 변경 콜백이에요. 고정값이 주기적으로 온다고 기대하면 안 돼요. 5초 재조회에 찬성해요. 재조회에 성공할 때만 `receivedAt`을 갱신하고, 연결·조회에 실패하면 `null`과 해당 상태를 보내요. 웹은 새 패킷이 없어도 자체 타이머로 15초 만료를 처리하면 좋겠어요 (0장 결정, 2.6, 3.4).
+6. **차량 경고가 막힐 때의 오류 내용은?**
+   → `pleos.car.permission.CAR_SAFETY`가 부여된 상태에서도 `checkTelltalesCapabilities`, `registerTelltales`, `getTelltalesInfo`가 `SecurityException`으로 거절됐어요. `ERROR_SECURITY_PERMISSION` 코드로 받은 건 아니에요. SDK 주석에는 등록·지원 조회에 OEM용 `PRIVATE_CAR_SAFETY`가 필요하다고 적혀 있어요. 특권 권한은 요청하지 않고 모의로 유지하는 데 동의해요.
+7. **현재 빌드에서 ADB `SIMULATE` 인텐트가 작동하나?**
+   → 이전 APK에서는 실제 에뮬레이터 화면에서 작동했어요. 현재 main은 스크립트가 문서대로 인텐트를 만드는 것과 Java 수신 코드까지 확인했어요. 최신 APK의 `scene`·`payload` 실동작과 `BungbungSim` 로그는 아직 재검증 전이에요.
+8. **ODO 단위가 km인가? 소수점이 오나?**
+   → 에뮬레이터 콘솔에서 2→3km로 바꾸니 같은 앱 프로세스의 SDK·화면에서 2→3으로 반영됐어요. 실차 단위는 미확인이고, 콘솔이 1km 단위라 소수점 수신도 미확인이에요. 계약은 km 숫자로 유지하고 소수점은 자르지 않는 게 좋아요 (2.4).
+9. **앱 복귀 때 ODO 재연결과 중복 알림이 없나?**
+   → 복귀 후 값 표시가 다시 되는 건 봤어요. 반복 백그라운드·복귀에서 구독 중복이 없는지까지는 검증하지 않았어요. 코드에는 `onStop` 해제와 이전 연결 콜백 차단이 있고, 실기 테스트는 따로 남겨 둘게요.
+10. **나머지 항목 중 Virtual Console에서 바꿀 수 있는 것과 권한은?**
+    → 주행 가능 거리(m), 와이퍼 모드, 전조등 모드, TPMS 경고등은 문서상 변경할 수 있어요. 외기온 변경은 미확인이고, 공조 설정 온도와는 다른 값이에요. 읽기 권한 후보는 이래요(문서상 후보이고, 앱 실수신과 TPMS 경고 API 권한은 따로 확인 필요).
+    - 주행 가능 거리: `pleos.car.permission.CAR_ENERGY`
+    - 와이퍼: `pleos.car.permission.CAR_WINDOWS`
+    - 조명: `pleos.car.permission.CAR_LIGHTS`
+    - 타이어 도메인: `pleos.car.permission.CAR_SAFETY`
+    - 외기온: AAOS `android.car.permission.CAR_EXTERIOR_ENVIRONMENT`
+11. **2장 패킷 모양으로 Java를 바꾸는 데 문제가 있나?**
+    → 2장 형식은 Java에서 보낼 수 있어요. `item`·`status`, `OK`가 아니면 값 `null`에 동의해요. Java에서 항목별로 마지막 패킷을 보관하고, 페이지가 열리면 전체 묶음을 먼저 채운 뒤 신호를 보낼게요. `__bungbungVehicle`은 ODO 전용 호환으로 남기고, 웹 ODO 확인 칸도 `item`으로 걸러 주세요(N12). ODO의 45초 조건은 연결 끊김을 따로 확실히 감지할 수 있을 때 바꾸는 게 좋겠어요 (0장 결정, 3.3).
+
+### 남은 확인 (다음 검증)
+- 마이카펫 APK에 `CAR_POWERTRAIN`을 추가하고 기어 수신 확인
+- 마이카펫 APK에서 주행 제한 수신 확인 (**가장 먼저**)
+- 시동 실제 값과 바꾸는 방법
+- 최신 APK의 ADB 시연(`scene`·`payload`)과 `BungbungSim` 로그
+- 반복 백그라운드·복귀 때 구독 중복 여부 (실기)
+- 실차 ODO 단위와 소수점
+- 주행 가능 거리·외기온·와이퍼·전조등·TPMS의 앱 실수신과 권한
