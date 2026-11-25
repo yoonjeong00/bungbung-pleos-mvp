@@ -3,7 +3,8 @@ import {derive,initial,load,save,readValue} from '../dist/js/logic.js';
 import {baseline,VehicleProvider} from '../dist/js/vehicle.js';
 import {advance,takeEvent,completeEvent} from '../dist/js/state-machine.js';
 let checks=0;function test(name,fn){fn();checks++;console.log('PASS',name)}
-test('Bad control signals fail closed',()=>{for(const k of ['gear','ignition','uxRestricted'])for(const status of ['ERROR','UNSUPPORTED','NO_PERMISSION','LOADING'])assert.equal(derive({...baseline(),dataStatus:{[k]:status}},initial()).parked,false)});
+test('Ignition is display-only, never fails the screen',()=>{for(const status of ['ERROR','UNSUPPORTED','NO_PERMISSION','LOADING'])assert.equal(derive({...baseline(),dataStatus:{ignition:status}},initial()).parked,true)});
+test('Bad control signals fail closed',()=>{for(const k of ['gear','uxRestricted'])for(const status of ['ERROR','UNSUPPORTED','NO_PERMISSION','LOADING'])assert.equal(derive({...baseline(),dataStatus:{[k]:status}},initial()).parked,false)});
 test('Live stale signals fail closed',()=>assert.equal(derive({...baseline(),isMock:false,receivedAt:{gear:0,ignition:0,uxRestricted:0}},initial()).restricted,true));
 test('Invalid numeric values are unavailable',()=>{assert.equal(readValue({...baseline(),rangeRemainingKm:-20},'rangeRemainingKm'),null);assert.equal(readValue({...baseline(),outsideTempC:90},'outsideTempC'),null)});
 test('Adult does not regress when provider reports older ODO',()=>assert.equal(derive(baseline(),{...initial(),ackStage:4,maxDistanceKm:6000}).stage,4));
@@ -22,7 +23,7 @@ test('Team 2 handoff: movement required for drive badges, restricted distance ho
  assert.equal(s.badges.includes('first'),true);
  assert.equal(s.badges.includes('cold'),true);
  // Restricted state holds distance at last valid maxDistanceKm and queues nothing
- d=advance(s,d,{...baseline(),gear:'P',uxRestricted:true,odometerKm:10500});
+ d=advance(s,d,{...baseline(),gear:'P',uxRestricted:null,odometerKm:10500}); // restriction signal missing
  assert.equal(d.distance,10);
  assert.equal(s.maxDistanceKm,10);
  assert.deepEqual(s.queuedEvents,[]);

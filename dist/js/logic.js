@@ -1,5 +1,5 @@
-import {cleanPetName} from './onboarding.js?v=20261125-r2';
-import {FUEL_THRESHOLDS,originOf} from './vehicle.js?v=20261125-r2';
+import {cleanPetName} from './onboarding.js?v=20261125-r3';
+import {FUEL_THRESHOLDS,originOf} from './vehicle.js?v=20261125-r3';
 // TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
 export const stages=[{name:'알',km:0},{name:'아기',km:0},{name:'어린이',km:300},{name:'청소년',km:2000},{name:'어른',km:6000}];
 // Highest stage number comes from the list length (0 = 알 ... 4 = 어른). Keep only stages in `stages`.
@@ -14,28 +14,37 @@ export function stageForDistance(km){
 }
 export const initial=()=>({petName:'토토',onboardingComplete:false,baseOdo:10000,hat:'none',badges:[],badgeEarnedAt:{},items:['headphones','cap','scarf'],ackStage:1,pendingGrowthStage:1,maxDistanceKm:0,queuedEvents:[],activeEvent:null,activeEventData:null,lowRangeKm:null,refuelDetails:null,vehicleSnapshot:null});
 const limits={odometerKm:[0,999999],tripDistanceKm:[0,2000],tripTimeMin:[0,1440],rangeRemainingKm:[0,1500],outsideTempC:[-40,60]};
+// How long a real (bridge) value stays valid without a new successful read (VEHICLE_BRIDGE_CONTRACT.md 0장).
+// Java re-reads safety signals every 5 s and ODO every 15 s.
+export const REAL_MAX_AGE_MS=Object.freeze({default:15000,odometerKm:45000});
+export const realMaxAgeMs=k=>REAL_MAX_AGE_MS[k]??REAL_MAX_AGE_MS.default;
 export function signalValid(v,k,now=Date.now()){
  const status=v.dataStatus?.[k];
  if(status&&status!=='OK')return false;
  // N11: judge each item by its own origin. A mock item is always current; a real item must be OK and fresh.
  if(originOf(v,k)==='mock')return true;
  const at=v.receivedAt?.[k];
- return status==='OK'&&Number.isFinite(at)&&now>=at&&now-at<=15000;
+ return status==='OK'&&Number.isFinite(at)&&now>=at&&now-at<=realMaxAgeMs(k);
 }
 export function readValue(v,k){const n=v[k],bounds=limits[k];return signalValid(v,k)&&Number.isFinite(n)&&(!bounds||(n>=bounds[0]&&n<=bounds[1]))?n:null}
 export function derive(v,s){
  // Old snapshots have no warning contract; an explicit unknown signal must fail closed.
  const hasWarningSignal=Object.hasOwn(v,'safetyWarnings')||Object.hasOwn(v.dataStatus||{},'safetyWarnings');
  const warningUnknown=hasWarningSignal&&(!Array.isArray(v.safetyWarnings)||!signalValid(v,'safetyWarnings'));
- const restricted=warningUnknown||!['gear','uxRestricted','ignition'].every(k=>signalValid(v,k))||v.uxRestricted!==false||!['P','D','R','N'].includes(v.gear)||v.ignition!=='ON';
+ // Spec 3.1 (2026-11-25): lock only when the driving-restriction signal is missing or stale.
+ // uxRestricted:true means "driving UX" → drive screen, not lock. Gear and ignition never lock the screen.
+ const restrictionKnown=signalValid(v,'uxRestricted')&&typeof v.uxRestricted==='boolean';
+ const restricted=warningUnknown||!restrictionKnown;
  const dangerous=signalValid(v,'safetyWarnings')&&Array.isArray(v.safetyWarnings)&&v.safetyWarnings.some(w=>w?.level==='red');
- const distanceHold=restricted||dangerous;
+ // Spec 6.2: growth distance pauses ONLY while the restriction signal is missing/stale or a red warning is on.
+ // A real car reports uxRestricted:true the whole time it drives, so "restricted" must never pause growth.
+ const distanceHold=!restrictionKnown||dangerous;
  const odo=readValue(v,'odometerKm');
  const rawDistance=odo===null?null:Math.max(0,odo-s.baseOdo);
  const distance=rawDistance===null?null:distanceHold?Math.max(0,s.maxDistanceKm||0):Math.max(0,s.maxDistanceKm||0,rawDistance);
  const rawStage=stageForDistance(distance);
  const stage=Math.max(rawStage,s.ackStage||1),range=readValue(v,'rangeRemainingKm');
- return {restricted,dangerous,warningUnknown,distanceHold,parked:!distanceHold&&v.gear==='P',distance,rawStage,stage,range,hungry:range!==null&&range<FUEL_THRESHOLDS.lowFuelKm,temp:readValue(v,'outsideTempC'),next:stages[stage+1]||null};
+ return {restricted,dangerous,warningUnknown,distanceHold,parked:!restricted&&!dangerous&&v.uxRestricted===false&&signalValid(v,'gear')&&v.gear==='P',distance,rawStage,stage,range,hungry:range!==null&&range<FUEL_THRESHOLDS.lowFuelKm,temp:readValue(v,'outsideTempC'),next:stages[stage+1]||null};
 }
 const eventTypes=['recovery','growth','summary','birth'];
 const badgeIds=['first','meal','grow','cold'];

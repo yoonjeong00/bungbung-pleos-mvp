@@ -32,17 +32,17 @@ test('Mock items stay valid while a real item is checked for freshness',()=>{
  assert.equal(signalValid(v,'ignition',later),true);
  assert.equal(derive(v,initial()).parked,true);
 });
-test('Mixed values: a real restriction signal still blocks the screen',()=>{
+test('Mixed values: a real "restricted" signal means drive screen, never parked',()=>{
  const p=new VehicleProvider();feed(p,{...base,source:'aaos-car',item:'uxRestricted',status:'OK',uxRestricted:true});
- assert.equal(derive(p.value,initial()).restricted,true);
+ const d=derive(p.value,initial());assert.equal(d.restricted,false);assert.equal(d.parked,false);
 });
-test('Non-OK packet: value null, status kept, receive time not refreshed, screen blocked',()=>{
+test('Non-OK packet: value null, status kept, receive time not refreshed, never parked',()=>{
  const p=new VehicleProvider();const b=feed(p,{...base,source:'aaos-car',item:'gear',status:'NO_PERMISSION',gear:'D',receivedAt:0,state:'error'});
  const v=p.value;
  assert.deepEqual(b.patch,{gear:null,dataStatus:{gear:'NO_PERMISSION'}});
  assert.equal(v.gear,null);assert.equal(v.dataStatus.gear,'NO_PERMISSION');assert.equal(v.receivedAt.gear,0);
  assert.equal(originOf(v,'gear'),'real');
- assert.equal(derive(v,initial()).restricted,true);
+ assert.equal(derive(v,initial()).parked,false,'unknown gear never opens the parked screen');
 });
 test('OK packet with an out-of-range value becomes ERROR, not a number',()=>{
  const p=new VehicleProvider();feed(p,{...odoPacket,odometerKm:-5});

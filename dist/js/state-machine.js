@@ -1,5 +1,25 @@
-import {derive,readValue} from './logic.js?v=20261125-r2';
-import {FUEL_THRESHOLDS,TEMP_THRESHOLDS} from './vehicle.js?v=20261125-r2';
+import {derive,readValue} from './logic.js?v=20261125-r3';
+import {FUEL_THRESHOLDS,TEMP_THRESHOLDS,vehicleKeys,originOf} from './vehicle.js?v=20261125-r3';
+// Spec 13.1 (2026-11-25): real vehicle values are never saved. The saved snapshot is the previous snapshot
+// with only the mock items overwritten; `origin` itself is never saved, so the format stays the same.
+function snapshotForSave(previous,vehicle){
+ const {origin,...current}=vehicle;
+ const present=vehicleKeys.filter(k=>Object.hasOwn(vehicle,k));
+ const mockKeys=present.filter(k=>originOf(vehicle,k)==='mock');
+ if(mockKeys.length===present.length)return structuredClone(current); // all mock: exactly as before
+ if(!previous||mockKeys.length===0)return previous??null;             // live: keep what was saved
+ // Only fields the previous snapshot already had are touched, so the saved shape never changes.
+ const next=structuredClone(previous);
+ for(const k of mockKeys){
+  next[k]=structuredClone(vehicle[k]);
+  for(const map of ['dataStatus','receivedAt']){
+   if(!next[map]||typeof next[map]!=='object')continue;
+   if(Object.hasOwn(vehicle[map]||{},k))next[map][k]=vehicle[map][k];else delete next[map][k];
+  }
+ }
+ next.isMock=true;
+ return next;
+}
 const eventTypes=['recovery','growth','summary','birth'];
 export function addBadge(s,id,at=Date.now()){
  if(!s.badges.includes(id)){s.badges.push(id);(s.badgeEarnedAt??={})[id]=at}
@@ -34,9 +54,7 @@ export function advance(s,previous,vehicle,{detect=true,now=Date.now()}={}){
   s.lowRangeKm=d.hungry?d.range:null;
   s.pendingGrowthStage=Math.max(s.ackStage||1,d.stage||1);
  }
- // N11: per-item `origin` is live-only; leave it out so the saved snapshot keeps its existing format.
- const {origin,...snapshot}=vehicle;
- s.vehicleSnapshot=structuredClone(snapshot);
+ s.vehicleSnapshot=snapshotForSave(s.vehicleSnapshot,vehicle);
  return d;
 }
 // Activate once, then return the same pending presentation until explicit acknowledgment.

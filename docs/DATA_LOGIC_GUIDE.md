@@ -30,13 +30,13 @@
 | **옛 저장 데이터 변환** (`logic.js`의 `load`) | 예전 버전 저장 내용을 지금 형식으로 바꿔 읽는다. 예: 첫 만남 기능이 생기기 전 사용자는 "이미 만난 것"으로 처리, 대기 중이던 성장 장면 유지 | 이 부분을 지우거나 바꾸면 **기존 사용자에게 첫 만남 화면이 다시 뜨거나**, 진행 중이던 성장 장면이 사라진다 |
 | **허용 목록** (`logic.js`의 `badgeIds`, `itemIds`, 모자 목록) | 저장값을 읽을 때 목록에 있는 것만 받아들인다 | **새 배지·소품을 만들고 목록에 안 넣으면, 받은 배지가 앱을 다시 열 때 사라진다.** 예: "1만 km의 추억" 배지를 구현할 때 `badgeIds`에 꼭 같이 넣는다 |
 | **새 저장 항목 추가** (`logic.js`의 `initial`과 `load`) | 저장할 값의 기본값과 읽기 규칙 | `initial`에만 넣고 `load`에 안 넣으면 저장은 되지만 **앱을 다시 열 때마다 기본값으로 돌아간다** |
-| **성장 계산** (`logic.js`의 `derive`, `stageForDistance`) | 함께 달린 거리 = 지금 ODO − 부화 기준 ODO. 가장 컸던 값(`maxDistanceKm`)을 기억해 줄지 않게 한다. 제한·빨간 경고 중에는 멈췄다가 풀리면 반영한다. 거리 → 단계는 `stageForDistance`가 단계 목록(`stages`)의 거리만 보고 **지나온 마지막 단계**를 돌려준다(0km·모르는 거리는 1 아기, 알 0은 돌려주지 않음). 화면 계산(`derive`)과 옛 저장값 변환(`load`)이 모두 이 함수를 쓴다 | 함수를 바꾸면 **화면과 옛 저장 데이터 읽기가 함께 바뀐다.** 단계 목록 `stages`의 0번이 "알"이라 0부터 세면 새 사용자가 "알"로 보인다. 한번 오른 단계(`ackStage`)와 받은 "첫 성장" 배지는 되돌릴 수 없다 |
+| **성장 계산** (`logic.js`의 `derive`, `stageForDistance`) | 함께 달린 거리 = 지금 ODO − 부화 기준 ODO. 가장 컸던 값(`maxDistanceKm`)을 기억해 줄지 않게 한다. **멈춤(`distanceHold`)은 두 경우뿐**: 주행 제한 신호 없음·오래됨(진짜 값 15초), 빨간 경고 중. 풀리면 그동안 거리를 반영한다. 주행 제한 `true`(실제 주행 내내)·노란·타이어 경고·경고 값 이상은 멈추지 않는다(기준서 6.2). 거리 → 단계는 `stageForDistance`가 단계 목록(`stages`)의 거리만 보고 **지나온 마지막 단계**를 돌려준다(0km·모르는 거리는 1 아기, 알 0은 돌려주지 않음). 화면 계산(`derive`)과 옛 저장값 변환(`load`)이 모두 이 함수를 쓴다 | `distanceHold`에 "제한 걸림(`true`)"을 넣으면 **실제 차에서 토토가 절대 자라지 않는다**(`tests/web-connector.mjs`가 잡음). 함수를 바꾸면 **화면과 옛 저장 데이터 읽기가 함께 바뀐다.** 단계 목록 `stages`의 0번이 "알"이라 0부터 세면 새 사용자가 "알"로 보인다. 한번 오른 단계(`ackStage`)와 받은 "첫 성장" 배지는 되돌릴 수 없다 |
 | **단계 목록 `stages`와 최고 단계** (`logic.js`의 `stages`, `MAX_STAGE`) | 성장 기준 거리(300/2,000/6,000km)는 이 목록에만 있다. 최고 단계 `MAX_STAGE`는 **목록 길이로 정해진다**(`stages.length - 1`, 지금 4 = 어른). `load`는 저장된 단계를 1~`MAX_STAGE`로 맞춰 읽는다 | **`stages` 목록에는 단계만 넣는다(최고 단계가 목록 길이로 정해짐).** 단계가 아닌 것을 넣으면 최고 단계가 같이 늘어난다. 단계를 줄이면 그보다 높게 저장된 사용자가 내려간 단계로 읽힌다. 단계를 추가·삭제할 때는 단계 그림(`stage1~4.webp`)과 성장 기록 화면도 같이 맞춘다 |
 | **부화 기준 ODO** (`baseOdo`, 지금은 10,000 고정) | 성장 거리의 출발점 | **실제 ODO를 연결할 때 가장 위험하다.** 실제 ODO가 45,000km인 차에 그대로 연결하면 35,000km를 달린 것으로 계산돼 **바로 어른이 된다.** 실제 ODO 연결은 부화 때 실제 ODO 저장과 반드시 함께 한다 |
 | **회복 판정** (`state-machine.js`의 `advance`) | 주행 가능 거리 50km 미만을 본 뒤 100km 이상 늘면 회복 장면, 배부른 날 배지, 밥그릇 | 받은 배지와 소품은 저장돼 되돌릴 수 없다. 조건을 느슨하게 하면 **엉뚱할 때 배지가 생긴다** |
 | **장면 순서** (`state-machine.js`의 `takeEvent`, `completeEvent`) | 장면은 주차 중에만 하나씩 꺼낸다 | 순서를 바꾸면 **주행 중에 성장 장면이 뜨거나**(기준서 위반) 장면이 사라진다 |
-| **화면을 막는 판단** (`logic.js`의 `derive` 제한 조건, `signalValid`) | 신호가 없거나 오래됐거나 이상하면 화면을 막는다 | 느슨하게 하면 **주행 중 안전 규칙을 어길 수 있다** |
-| **진짜·모의 꼬리표 `origin`** (`vehicle.js`의 `origin`, `state-machine.js`의 저장 직전) | 차 값마다 진짜(`real`)·모의(`mock`)를 표시한다. `signalValid`는 이 꼬리표로 항목마다 판단하고(mock은 유효, real은 OK + 15초), "모의 데이터" 표시도 이걸 본다. **`origin`은 화면이 쓰는 값에만 있고, 저장 직전(`advance`의 `vehicleSnapshot`)에 뺀다** | 저장 직전에 빼는 줄을 지우면 **저장 형식이 바뀐다**(스냅샷에 `origin`이 들어감). 진짜 값이 섞인 스냅샷은 `isMock:false`가 되어 `load`가 버린다. 진짜 차량 값은 저장하지 않는 게 원칙(기준서 13.1)이고, real 항목을 빼고 저장하는 구현은 웹 연결기 작업에서 한다 |
+| **화면을 막는 판단** (`logic.js`의 `derive` 제한 조건, `signalValid`, `REAL_MAX_AGE_MS`) | **주행 제한 신호(`uxRestricted`)가 없거나 오래되면(진짜 값 15초) 잠금.** 제한 걸림이면 주행 화면, 제한 없음 + 기어 P일 때만 정차 화면. 시동은 판단에 쓰지 않는다 (기준서 3.1, 2026-11-25) | 느슨하게 하면 **주행 중 안전 규칙을 어길 수 있다.** 기어·속도로 제한을 추정하지 않는다. 기어를 모르면 정차 화면을 열지 않는다 |
+| **진짜·모의 꼬리표 `origin`** (`vehicle.js`의 `origin`, `state-machine.js`의 저장 직전) | 차 값마다 진짜(`real`)·모의(`mock`)를 표시한다. `signalValid`는 이 꼬리표로 항목마다 판단하고(mock은 유효, real은 OK + 15초), "모의 데이터" 표시도 이걸 본다. **`origin`은 화면이 쓰는 값에만 있고, 저장 직전(`advance`의 `vehicleSnapshot`)에 뺀다** | 저장 직전에 빼는 줄을 지우면 **저장 형식이 바뀐다**(스냅샷에 `origin`이 들어감). 진짜 값이 섞인 스냅샷은 `isMock:false`가 되어 `load`가 버린다. 진짜 차량 값은 저장하지 않는다(기준서 13.1). 저장 직전 `snapshotForSave`가 **이전 저장값에 모의 항목만 덮어쓰고**, 이전 저장값에 없던 칸은 만들지 않는다(계약 문서 3.6) |
 | **시연 칸막이** (`session.checkpoint`) | 시연 중에는 진짜 저장을 하지 않는다 | `save`를 직접 부르면 **시연 값(예: 2,180km, 청소년)이 진짜 토토에 덮어써진다** |
 
 ---
@@ -50,13 +50,14 @@
 | [`tests/logic.mjs`](../tests/logic.mjs) | 기본 계산 (주행·주차 판단, 거리, 단계) |
 | [`tests/state-regressions.mjs`](../tests/state-regressions.mjs) | 이상한 신호·오래된 신호면 막기, 어른이 거꾸로 안 내려가기, 회복과 성장 순서, 저장 후 복원 |
 | [`tests/event-lifecycle.mjs`](../tests/event-lifecycle.mjs) | 천천히 주유해도 회복, 앱을 껐다 켜도 보상 유지, 장면 중복 방지 |
-| [`tests/team-integration-data.mjs`](../tests/team-integration-data.mjs) | 제한·경고 중 거리 멈춤과 해제 후 반영, 옛 저장 데이터 유지 |
+| [`tests/team-integration-data.mjs`](../tests/team-integration-data.mjs) | 주행 제한 신호 없음·빨간 경고 중 거리 멈춤과 해제 후 반영, 옛 저장 데이터 유지 |
 | [`tests/final-data-qa.mjs`](../tests/final-data-qa.mjs) | S1~S10 시나리오별 데이터·장면, 같은 값 반복 수신 |
 | [`tests/onboarding-persistence.mjs`](../tests/onboarding-persistence.mjs) | 새 사용자·옛 사용자·완료 사용자의 첫 만남 처리, 시연 격리 |
 | [`tests/save-dedup.mjs`](../tests/save-dedup.mjs) | 같은 내용 반복 저장 안 하기, 시연 중 저장 안 하기 |
 | [`tests/team1.mjs`](../tests/team1.mjs) | 차 데이터 검증, 시연 재생 멈춤·재개 |
 | [`tests/thresholds.mjs`](../tests/thresholds.mjs) | 기준값(연료·기온·성장 거리)과 경계, 단계 목록 규칙(최고 단계 4, 거리 증가 순서), 회복 판정, `load`의 연료 부족 기록, 추운 날 배지 |
 | [`tests/growth-stages.mjs`](../tests/growth-stages.mjs) | 성장 현재 동작 고정: 옛 저장 데이터의 단계, 단계가 내려가지 않음, 경계마다 성장 장면 한 번 |
+| [`tests/web-connector.mjs`](../tests/web-connector.mjs) | 웹 연결기: 실차·모의·시연 모드, 화면 판단(제한 걸림 + 기어 없음 → 주행, 제한 없음 + 기어 없음 → 정차 아님, 시동은 판단 안 함), 15초·45초 만료와 1초 타이머, 진짜 ODO는 기억만(성장 그대로), 주행 제한 `true`로 달리는 동안 거리가 쌓이고 멈춤은 신호 없음·오래됨·빨간 경고 때만, 저장에 진짜 값 없음, 시연 중 진짜 값 무시·복귀 |
 | [`tests/vehicle-bridge.mjs`](../tests/vehicle-bridge.mjs) | 가짜 차량 패킷: 진짜 ODO + 모의 기어 구분, 진짜 신호만 15초 만료, 비정상 패킷은 값 `null`·화면 막음, 저장 스냅샷에 `origin` 없음, 옛 스냅샷·옛 ODO 패킷 호환, 기어 패킷이 와도 ODO 확인 칸이 오류 아님 |
 
 실행: 저장소 루트에서 `node --test tests/파일이름.mjs`. 고친 뒤에는 `tests/` 전체를 돌린다.

@@ -12,7 +12,8 @@ export const vehicleKeys=Object.freeze([...Object.keys(numericLimits),...Object.
 const allMock=()=>Object.fromEntries(vehicleKeys.map(k=>[k,'mock']));
 // Values without `origin` (old snapshots, fixtures) follow the old single flag: isMock:true means every item is mock.
 export const originOf=(v,key)=>v?.origin?.[key]??(v?.isMock===true?'mock':'real');
-export const usesMockData=v=>vehicleKeys.some(key=>originOf(v,key)==='mock');
+// Only items the value actually has count (live mode has no safetyWarnings item at all).
+export const usesMockData=v=>vehicleKeys.some(key=>Object.hasOwn(v??{},key)&&originOf(v,key)==='mock');
 export class VehicleProvider extends EventTarget {
  constructor(snapshot=null){super();this._value={...baseline(),origin:allMock()};this.sequence=0;this.set(snapshot||{},false)}
  get value(){return structuredClone(this._value)}
@@ -33,6 +34,14 @@ export class VehicleProvider extends EventTarget {
   if(notify)this.dispatchEvent(new CustomEvent('change',{detail:this.value}));
  }
  reset(){this._value={...baseline(),origin:allMock()};this.set(baseline())}
+ // Live (real-car) mode start: every item is real and unknown (LOADING) — never mock defaults (contract 3.1).
+ // safetyWarnings is left out entirely: it needs an OEM-only permission, so live mode has no warning item.
+ startLive(notify=true){
+  const next={...this._value,dataStatus:{},receivedAt:{},origin:{}};
+  for(const key of vehicleKeys){if(key==='safetyWarnings')continue;next[key]=null;next.dataStatus[key]='LOADING';next.receivedAt[key]=0;next.origin[key]='real';}
+  delete next.safetyWarnings;next.isMock=false;next.sequence=++this.sequence;this._value=next;
+  if(notify)this.dispatchEvent(new CustomEvent('change',{detail:this.value}));
+ }
  subscribe(listener){const handler=e=>listener(e.detail);this.addEventListener('change',handler);return()=>this.removeEventListener('change',handler)}
 }
 // Bridge packet (docs/VEHICLE_BRIDGE_CONTRACT.md ch.2) → provider patch. Pure; not wired to the app yet.
