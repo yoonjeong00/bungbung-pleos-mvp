@@ -24,9 +24,14 @@ final class VehicleDriveProperties {
  private final Handler main = new Handler(Looper.getMainLooper());
  private final HandlerThread thread = new HandlerThread("bungbung-car-properties");
  private final Handler worker;
- private final Signal gear = new Signal("gear", VehiclePropertyIds.GEAR_SELECTION);
- private final Signal ignition = new Signal("ignition", VehiclePropertyIds.IGNITION_STATE);
- private final Signal[] signals = {gear, ignition};
+ private final Signal gear = new Signal("gear", VehiclePropertyIds.GEAR_SELECTION,
+     Car.PERMISSION_POWERTRAIN, Integer.class, true);
+ private final Signal ignition = new Signal("ignition", VehiclePropertyIds.IGNITION_STATE,
+     Car.PERMISSION_POWERTRAIN, Integer.class, true);
+ // Range is not a fast safety signal. Periodic reads avoid subscribing to a continuous property.
+ private final Signal range = new Signal("rangeRemainingKm", VehiclePropertyIds.RANGE_REMAINING,
+     Car.PERMISSION_ENERGY, Float.class, false);
+ private final Signal[] signals = {gear, ignition, range};
  // Set only on the main thread. A stop/disconnect invalidates pending IO immediately.
  private volatile int generation;
  private CarPropertyManager manager;
@@ -56,8 +61,6 @@ final class VehicleDriveProperties {
 
  private void bind(Car ready, int epoch) {
   try {
-   if (activity.checkSelfPermission(Car.PERMISSION_POWERTRAIN) != PackageManager.PERMISSION_GRANTED)
-    throw new SecurityException("CAR_POWERTRAIN not granted");
    if (!ready.isConnected()) {
     rows(null, "ERROR", "error", "차량 속성 서비스 연결 끊김", "lifecycle", false, epoch);
     return;
@@ -114,7 +117,11 @@ final class VehicleDriveProperties {
     send(signal, null, "ERROR", "error", "차량 속성 서비스 연결 끊김", via, false, epoch);
     return;
    }
-   if (!signal.registered) {
+   if (activity.checkSelfPermission(signal.permission) != PackageManager.PERMISSION_GRANTED) {
+    send(signal, null, "NO_PERMISSION", "error", "차량 속성 읽기 권한 없음", "capability", true, epoch);
+    return;
+   }
+   if (!signal.supported) {
     CarPropertyConfig<?> config = manager.getCarPropertyConfig(signal.id);
     if (config == null) {
      signal.supported = false;
@@ -122,6 +129,8 @@ final class VehicleDriveProperties {
      return;
     }
     signal.supported = true;
+   }
+   if (signal.observeChanges && !signal.registered) {
     signal.cleanup = true;
     signal.registered = manager.registerCallback(listener, signal.id, CarPropertyManager.SENSOR_RATE_ONCHANGE);
     if (!signal.registered) {
@@ -129,11 +138,14 @@ final class VehicleDriveProperties {
      return;
     }
    }
-   CarPropertyValue<Integer> property = manager.getProperty(Integer.class, signal.id, GLOBAL);
-   String value = null;
+   CarPropertyValue<?> property = manager.getProperty(signal.type, signal.id, GLOBAL);
+   Object value = null;
    if (property != null && property.getPropertyId() == signal.id && property.getAreaId() == GLOBAL
        && property.getStatus() == CarPropertyValue.STATUS_AVAILABLE && property.getValue() != null) {
-    value = signal == gear ? DriveValues.gear(property.getValue()) : DriveValues.ignition(property.getValue());
+    Object raw = property.getValue();
+    if (signal == gear && raw instanceof Integer) value = DriveValues.gear((Integer) raw);
+    else if (signal == ignition && raw instanceof Integer) value = DriveValues.ignition((Integer) raw);
+    else if (signal == range && raw instanceof Float) value = DriveValues.rangeKm((Float) raw);
    }
    boolean connected = car.isConnected();
    if (value == null || !connected) {
@@ -151,12 +163,12 @@ final class VehicleDriveProperties {
   }
  }
 
- private void rows(String value, String status, String state, String message, String via,
+ private void rows(Object value, String status, String state, String message, String via,
                   boolean connected, int epoch) {
   for (Signal signal : signals) send(signal, value, status, state, message, via, connected, epoch);
  }
 
- private void send(Signal signal, String value, String status, String state, String message,
+ private void send(Signal signal, Object value, String status, String state, String message,
                    String via, boolean connected, int epoch) {
   long sampledAt = value == null ? 0 : System.currentTimeMillis();
   int updates = signal.updates, changes = signal.changes;
@@ -169,7 +181,7 @@ final class VehicleDriveProperties {
   });
  }
 
- private void deliver(String item, String value, String status, String state, String message,
+ private void deliver(String item, Object value, String status, String state, String message,
                       String via, boolean connected, boolean supported, String access,
                       long sampledAt, int updates, int changes) {
   try {
@@ -207,9 +219,15 @@ final class VehicleDriveProperties {
  private static final class Signal {
   final String item;
   final int id;
+  final String permission;
+  final Class<?> type;
+  final boolean observeChanges;
   boolean supported, registered, cleanup;
-  String previous;
+  Object previous;
   int updates, changes;
-  Signal(String item, int id) { this.item = item; this.id = id; }
+  Signal(String item, int id, String permission, Class<?> type, boolean observeChanges) {
+   this.item = item; this.id = id; this.permission = permission;
+   this.type = type; this.observeChanges = observeChanges;
+  }
  }
 }
