@@ -18,9 +18,10 @@ final class VehicleUxBridge {
  private final Activity activity;
  private final Consumer<JSONObject> sink;
  private final Handler main = new Handler(Looper.getMainLooper());
+ private final VehicleDriveProperties drive;
  private Car car;
  private CarUxRestrictionsManager manager;
- private boolean active, subscribed;
+ private boolean active, subscribed, driveTimedOut;
  private int generation, subscription, updates, changes;
  private long connectingAt;
  private Boolean previous;
@@ -28,22 +29,26 @@ final class VehicleUxBridge {
  VehicleUxBridge(Activity activity, Consumer<JSONObject> sink) {
   this.activity = activity;
   this.sink = sink;
+  this.drive = new VehicleDriveProperties(activity, sink);
  }
 
  void start() {
   if (active) return;
   active = true;
+  driveTimedOut = false;
   final int epoch = ++generation;
   updates = changes = 0;
   previous = null;
   connectingAt = android.os.SystemClock.elapsedRealtime();
   emit(null, "LOADING", "connecting", "차량 서비스 연결 대기", "lifecycle", false);
+  drive.setService(null, "LOADING", "connecting", "차량 서비스 연결 대기", "lifecycle");
   try {
    // This may call serviceChanged synchronously. That callback uses its own Car argument.
    car = Car.createCar(activity, main, Car.CAR_WAIT_TIMEOUT_DO_NOT_WAIT,
        (service, ready) -> { if (active && epoch == generation) serviceChanged(service, ready); });
    if (car == null) {
     emit(null, "UNSUPPORTED", "unsupported", "차량 서비스 미지원", "capability", false);
+    drive.setService(null, "UNSUPPORTED", "unsupported", "차량 서비스 미지원", "capability");
     return;
    }
    main.postDelayed(new Runnable() {
@@ -55,15 +60,22 @@ final class VehicleUxBridge {
      } else if (car != null && !car.isConnected()
          && android.os.SystemClock.elapsedRealtime() - connectingAt >= 10000L) {
       emit(null, "ERROR", "error", "차량 서비스 미연결", "timeout", false);
+      if (!driveTimedOut) {
+       driveTimedOut = true;
+       drive.setService(null, "ERROR", "error", "차량 서비스 미연결", "timeout");
+      }
      }
      main.postDelayed(this, HEARTBEAT_MS);
     }
    }, HEARTBEAT_MS);
   } catch (RuntimeException e) {
    failure(e, "capability", false);
+   drive.setService(null, e instanceof SecurityException ? "NO_PERMISSION" : "ERROR",
+       "error", "차량 서비스 초기화 실패", "capability");
   } catch (LinkageError e) {
    Log.w(TAG, "AAOS API is not available", e);
    emit(null, "UNSUPPORTED", "unsupported", "주행 제한 API 미지원", "capability", false);
+   drive.setService(null, "UNSUPPORTED", "unsupported", "AAOS API 미지원", "capability");
   }
  }
 
@@ -71,6 +83,9 @@ final class VehicleUxBridge {
   releaseManager();
   previous = null;
   car = service;
+  driveTimedOut = false;
+  drive.setService(ready ? service : null, "LOADING", "waiting",
+      ready ? "차량 속성 조회 대기" : "차량 서비스 연결 끊김", "lifecycle");
   if (!ready) {
    connectingAt = android.os.SystemClock.elapsedRealtime();
    emit(null, "LOADING", "waiting", "차량 서비스 연결 끊김", "lifecycle", false);
@@ -158,6 +173,7 @@ final class VehicleUxBridge {
   if (!active) return;
   active = false;
   ++generation;
+  drive.setService(null, "LOADING", "stopped", "앱 비활성 · 차량 속성 구독 해제", "lifecycle");
   main.removeCallbacksAndMessages(null);
   releaseManager();
   if (car != null) {
@@ -167,4 +183,5 @@ final class VehicleUxBridge {
   previous = null;
   emit(null, "LOADING", "stopped", "앱 비활성 · 주행 제한 구독 해제", "lifecycle", false);
  }
+ void close() { stop(); drive.close(); }
 }
