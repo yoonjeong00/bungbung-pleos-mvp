@@ -276,22 +276,24 @@
 
 ### 10.1 데이터 목록
 
-| 내부 이름 | 뜻 | 출처 (AAOS / Pleos SDK) | 단위·범위 | 우선 | 현재 연결 |
-| --- | --- | --- | --- | --- | --- |
-| `uxRestricted` | 주행 제한 여부 | CarUxRestrictions | true / false / null | P0 | 모의 (CarUxRestrictions 미연결) |
-| `gear` | 기어 | GEAR_SELECTION | P, R, N, D | P0 | 모의 |
-| `ignition` | 시동 | IGNITION_STATE | OFF, ACC, ON, START | P0 | 모의. ON이 아니면 제한 상태로 처리 |
-| `odometerKm` | 누적 주행 거리 | Odometer SDK | km | P0 | SDK 연동 작업 중 (verify/pleos-odometer) |
-| `tripDistanceKm` | 이번 주행 거리 | Odometer SDK | km | P0 | 모의 |
-| `tripTimeMin` | 이번 주행 시간 | Odometer SDK | 분 | P0 | 모의 |
-| `rangeRemainingKm` | 주행 가능 거리 | RANGE_REMAINING (원본 m) | km, 0~1,500 | P0 | 모의 (km로 받음) |
-| `outsideTempC` | 바깥 기온 | ENV_OUTSIDE_TEMPERATURE | °C, -40~60 | P0 | 모의 |
-| `dataStatus` | 항목별 수신 상태 | 앱 내부 | OK, LOADING, NO_PERMISSION, UNSUPPORTED, ERROR | P0 | 구현 (`vehicle.js`). OK가 아니면 그 값을 쓰지 않음 |
-| `isMock` | 모의 데이터 여부 | 앱 내부 | true / false | P0 | 모의 |
-| `wiperState` | 와이퍼 | Wiper SDK | OFF, INT, LOW, HIGH | P1 | 모의 |
-| `headlightOn` | 전조등 | Light SDK | true / false | P1 | 모의 |
-| `tireWarning` | 타이어 공기압 경고 | Tire SDK | true / false | P1 | 모의 (읽기 권한 확인 필요) |
-| `safetyWarnings` | 차량 경고 목록 (노란·빨간 등급) | Safety SDK | 목록 | P1 | 모의 (읽기 권한 확인 필요) |
+| 내부 이름 | 뜻 | 출처 (AAOS / Pleos SDK) | 단위·범위 | 우선 | 현재 연결 | 에뮬레이터 검증 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `uxRestricted` | 주행 제한 여부 | CarUxRestrictions | true / false / null | P0 | 모의 (CarUxRestrictions 미연결) | △ 진단 앱에서 받음, 마이카펫 앱 미확인 |
+| `gear` | 기어 | GEAR_SELECTION | P, R, N, D | P0 | 모의 | △ 진단 앱에서 P·D·R·N 받음, 마이카펫 앱 미확인 |
+| `ignition` | 시동 | IGNITION_STATE | OFF, ACC, ON, START | P0 | 모의. ON이 아니면 제한 상태로 처리 | 미확인 |
+| `odometerKm` | 누적 주행 거리 | Odometer SDK | km | P0 | SDK 연동 작업 중 (verify/pleos-odometer) | ✅ Virtual Console에서 바꾸면 앱이 받음 |
+| `tripDistanceKm` | 이번 주행 거리 | Odometer SDK | km | P0 | 모의 | 미확인 |
+| `tripTimeMin` | 이번 주행 시간 | Odometer SDK | 분 | P0 | 모의 | 미확인 |
+| `rangeRemainingKm` | 주행 가능 거리 | RANGE_REMAINING (원본 m) | km, 0~1,500 | P0 | 모의 (km로 받음) | 미확인 |
+| `outsideTempC` | 바깥 기온 | ENV_OUTSIDE_TEMPERATURE | °C, -40~60 | P0 | 모의 | 미확인 |
+| `dataStatus` | 항목별 수신 상태 | 앱 내부 | OK, LOADING, NO_PERMISSION, UNSUPPORTED, ERROR | P0 | 구현 (`vehicle.js`). OK가 아니면 그 값을 쓰지 않음 | 해당 없음 |
+| `isMock` | 모의 데이터 여부 | 앱 내부 | true / false | P0 | 모의 | 해당 없음 |
+| `wiperState` | 와이퍼 | Wiper SDK | OFF, INT, LOW, HIGH | P1 | 모의 | 미확인 |
+| `headlightOn` | 전조등 | Light SDK | true / false | P1 | 모의 | 미확인 |
+| `tireWarning` | 타이어 공기압 경고 | Tire SDK | true / false | P1 | 모의 (읽기 권한 확인 필요) | 미확인 |
+| `safetyWarnings` | 차량 경고 목록 (노란·빨간 등급) | Safety SDK | 목록 | P1 | 모의 (읽기 권한 확인 필요) | ✕ 일반 권한으로 막힘 → 당분간 시연 모드에서만 |
+
+- 에뮬레이터 검증은 팀원1 확인 결과다. ADB 시연은 예전 빌드에서 작동했고 현재 빌드는 다시 확인이 필요하다. 자세한 기록과 Android → 웹 전달 방식은 [VEHICLE_BRIDGE_CONTRACT.md](VEHICLE_BRIDGE_CONTRACT.md)를 본다.
 
 - 모든 값에는 수신 시각을 함께 담고, 값이 없으면 0이 아니라 null로 둔다.
 - 위치: Fused Location 미지원, Vehicle Data API는 유럽 전용 → 위치·외부 날씨는 쓰지 않는다. 날씨는 외기온·와이퍼·라이트로만 표현한다.
@@ -359,6 +361,11 @@
 | 2026-11-18 | 빨간 경고는 오른쪽 창만 덮음 (가운데 내비는 보임) |
 | 2026-11-24 | 서비스명 마이카펫, 캐릭터 토토, 성장 4단계(아기·어린이·청소년·어른), 알은 첫 만남 연출 |
 | 2026-11-24 | 내부 코드 이름(bungbung, 저장 이름표, 앱 ID)은 바꾸지 않음 |
+| 2026-11-25 | 웹(WebView) 구조 유지 (O5 결정. Compose로 바꾸지 않음) |
+| 2026-11-25 | 실차 모드/시연 모드 구분. 시연 중에는 실제 차량 값을 무시하고 저장하지 않음 |
+| 2026-11-25 | Java 연결은 팀원1, 웹 연결기·성장 계산·테스트는 윤서 |
+| 2026-11-25 | 연결 순서: 주행 제한 → 기어·시동 → ODO 성장 → 나머지 |
+| 2026-11-25 | 차량 경고는 일반 권한으로 막혀 당분간 시연 모드에서만 |
 
 ### 13.2 열린 결정
 
@@ -368,7 +375,6 @@
 | O2 | 3~4단계 사이 중간 보상 설계 | 기획 |
 | O3 | 상황별 이미지를 단계별로 만들지 | 기획·디자인 |
 | O4 | 글꼴 Asta Sans 적용 시점 | 팀 |
-| O5 | 기술 구조: 웹(WebView) 유지 vs Compose 전환 | 개발 |
 | O6 | 실제 읽을 수 있는 차량 데이터와 권한 (Tire·Safety·Wiper·Light·Odometer) | 개발 |
 | O7 | 열린 PR #1, verify/pleos-odometer 브랜치 처리 | 팀원1 |
 | O8 | 안 쓰는 옛 파일 정리 (테스트·sync-android.py 함께 수정) | 팀 |
@@ -387,6 +393,7 @@
 | N6 ✅ 완료 | `state-machine.js`에 숫자를 직접 쓴 곳 2곳: 연료 부족 기록(`n<50`), 주유 회복 판단(100km 증가) | `FUEL_THRESHOLDS.lowFuelKm`, `FUEL_THRESHOLDS.refuelJumpKm` 사용. **완료(2026-11-24)**: 연료 부족 기록은 `FUEL_THRESHOLDS.lowFuelKm`, 회복 판단은 `FUEL_THRESHOLDS.refuelJumpKm` 사용. 주행 화면 "주유 직후"와 같은 100km 상수를 씀 | `state-machine.js` |
 | N7 ✅ 완료 | 성장 기준 거리(300/2,000/6,000)가 3곳에 따로 있음: 단계 목록(`stages`), 단계 계산(`derive`), 옛 저장값 변환(`load`) | 단계 목록(`stages`) 한곳만 보고 계산하게. **완료(2026-11-24)**: `stageForDistance`(단계 목록만 보고 지나온 마지막 단계, 알 0은 돌려주지 않음)를 만들고 단계 계산(`derive`)과 옛 저장값 변환(`load`)이 모두 사용. `load`의 최고 단계 4도 `MAX_STAGE`(목록 길이 − 1)로 바꿈. 값은 그대로라 기존 사용자 데이터에 영향 없음 (`tests/growth-stages.mjs`로 확인) | `logic.js` |
 | N8 ✅ 완료 | 정차 화면 주행 가능 거리 상세의 배고픔 문구("토토가 배고파요")가 `logic.js`의 50km 하나만 씀 | `FUEL_THRESHOLDS` 3단계(연료 부족/배고픔/충분)에 맞추기. **N5와 함께 진행**. **완료(2026-11-24)**: `FUEL_THRESHOLDS`로 3단계 — 50km 미만 "배고파… 주유소 들를까?", 150km 미만 "조금 출출해", 그 이상 "배불러, 든든해!" | `hmi-app.js` |
+| N9 | 웹 시연 모드 1280×720에서 주행 화면 성장 단계 글자가 13.7px로 9장 기준(16px)보다 작음 (앱 모드는 16px) | 웹 시연 모드 1280×720에서 성장 단계 글자 13.7px → 16px 이상으로 | `hmi.css` |
 
 ---
 
@@ -413,6 +420,7 @@
 | `docs/vehicle-distance-sdk.md` | 누적 거리 SDK 연동 구조 (기술 참고) |
 | `docs/art-direction.md` | 그림 방향과 생성 문장 (디자인 참고) |
 | `docs/DATA_LOGIC_GUIDE.md` | 데이터 로직(`logic.js`·`state-machine.js`·저장) 파일 역할, 고칠 때 조심할 곳, 테스트 (작업 안내) |
+| `docs/VEHICLE_BRIDGE_CONTRACT.md` | Android → 웹 차량 값 전달 약속(신호 이름·패킷 모양·수신 상태), 실차/시연 모드 규칙, 에뮬레이터 검증 기록, 팀원1 확인 질문 (연결 약속) |
 | `design/` (`design/README.md`) | 화면에서 쓰지 않는 그림 보관. `source/`는 지금 그림을 잘라낸 원본 시안, `archive/`는 옛 화면 그림. 앱에 들어가지 않음 (디자인 참고) |
 | 그 밖의 `docs/*` (final-*-audit, team-*, android-review 등) | 작업 기록. 기준으로 쓰지 않음 |
 | 토토 상황별 행동·모션 정의서 (외부 문서) | 상황별 이미지 제작 참고 |
