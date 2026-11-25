@@ -1,5 +1,5 @@
-import {cleanPetName} from './onboarding.js?v=20261115-r7';
-import {FUEL_THRESHOLDS} from './vehicle.js?v=20261115-r7';
+import {cleanPetName} from './onboarding.js?v=20261125-r1';
+import {FUEL_THRESHOLDS} from './vehicle.js?v=20261125-r1';
 // TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
 export const stages=[{name:'알',km:0},{name:'아기',km:0},{name:'어린이',km:300},{name:'청소년',km:2000},{name:'어른',km:6000}];
 // Highest stage number comes from the list length (0 = 알 ... 4 = 어른). Keep only stages in `stages`.
