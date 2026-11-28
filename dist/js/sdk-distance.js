@@ -1,9 +1,9 @@
 // Independent read-only SDK monitor: never writes the mock provider or saved pet.
-import {realMaxAgeMs} from './logic.js?v=20261125-r3';
+import {realMaxAgeMs} from './logic.js?v=20261128-range-r1';
 // N12: only ODO packets belong here. Legacy packets have no `item` and are ODO (VEHICLE_BRIDGE_CONTRACT.md 2.1).
 export const isOdometerPacket=p=>!!p&&typeof p==='object'&&p.source==='pleos-sdk'&&(p.item===undefined||p.item===null||p.item==='odometerKm');
 // Safety signals shown for testers (spec 13.1: ignition is displayed only, never used to lock the screen).
-export const SIGNAL_ITEMS=Object.freeze([['uxRestricted','주행 제한'],['gear','기어'],['ignition','시동']]);
+export const SIGNAL_ITEMS=Object.freeze([['uxRestricted','주행 제한'],['gear','기어'],['ignition','시동'],['rangeRemainingKm','주행 가능 거리']]);
 const statusText={LOADING:'기다리는 중',NO_PERMISSION:'권한 없음',UNSUPPORTED:'미지원',ERROR:'오류'};
 export function signalStatus(item,packet,now=Date.now()){
  if(!packet)return '기다리는 중';
@@ -13,7 +13,9 @@ export function signalStatus(item,packet,now=Date.now()){
  if(!Number.isFinite(packet.receivedAt)||packet.receivedAt<=0||age<-5000||age>realMaxAgeMs(item))return '오래됨';
  const value=item==='uxRestricted'?(packet.uxRestricted===true?'제한 있음':packet.uxRestricted===false?'제한 없음':null):packet[item];
  if(value===null||value===undefined)return '오류';
- return `${value} (${Math.max(0,Math.round(age/1000))}초 전)`;
+ if(item==='rangeRemainingKm'&&(!Number.isFinite(value)||value<0||value>1500))return '오류';
+ const display=item==='rangeRemainingKm'?value.toLocaleString('ko-KR',{maximumFractionDigits:2})+' km':value;
+ return `${display} (${Math.max(0,Math.round(age/1000))}초 전)`;
 }
 export function distanceStatus(packet,now=Date.now()){
  if(!isOdometerPacket(packet))return {state:'waiting',value:'—',message:'Android SDK 응답 대기',support:'확인 전',via:'—',updates:0,valueChanges:null,time:'—'};

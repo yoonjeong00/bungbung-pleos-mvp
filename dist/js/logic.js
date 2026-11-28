@@ -1,5 +1,5 @@
-import {cleanPetName} from './onboarding.js?v=20261125-r3';
-import {FUEL_THRESHOLDS,originOf} from './vehicle.js?v=20261125-r3';
+import {cleanPetName} from './onboarding.js?v=20261128-range-r1';
+import {FUEL_THRESHOLDS,originOf} from './vehicle.js?v=20261128-range-r1';
 // TEAM 2: pure state and persistence boundary. Demo thresholds, not diagnostic rules.
 export const stages=[{name:'알',km:0},{name:'아기',km:0},{name:'어린이',km:300},{name:'청소년',km:2000},{name:'어른',km:6000}];
 // Highest stage number comes from the list length (0 = 알 ... 4 = 어른). Keep only stages in `stages`.
@@ -44,7 +44,8 @@ export function derive(v,s){
  const distance=rawDistance===null?null:distanceHold?Math.max(0,s.maxDistanceKm||0):Math.max(0,s.maxDistanceKm||0,rawDistance);
  const rawStage=stageForDistance(distance);
  const stage=Math.max(rawStage,s.ackStage||1),range=readValue(v,'rangeRemainingKm');
- return {restricted,dangerous,warningUnknown,distanceHold,parked:!restricted&&!dangerous&&v.uxRestricted===false&&signalValid(v,'gear')&&v.gear==='P',distance,rawStage,stage,range,hungry:range!==null&&range<FUEL_THRESHOLDS.lowFuelKm,temp:readValue(v,'outsideTempC'),next:stages[stage+1]||null};
+ const demoRange=originOf(v,'rangeRemainingKm')==='mock'?range:null;
+ return {restricted,dangerous,warningUnknown,distanceHold,parked:!restricted&&!dangerous&&v.uxRestricted===false&&signalValid(v,'gear')&&v.gear==='P',distance,rawStage,stage,range,demoRange,hungry:demoRange!==null&&demoRange<FUEL_THRESHOLDS.lowFuelKm,temp:readValue(v,'outsideTempC'),next:stages[stage+1]||null};
 }
 const eventTypes=['recovery','growth','summary','birth'];
 const badgeIds=['first','meal','grow','cold'];

@@ -1,5 +1,5 @@
-import {derive,readValue} from './logic.js?v=20261125-r3';
-import {FUEL_THRESHOLDS,TEMP_THRESHOLDS,vehicleKeys,originOf} from './vehicle.js?v=20261125-r3';
+import {derive,readValue} from './logic.js?v=20261128-range-r1';
+import {FUEL_THRESHOLDS,TEMP_THRESHOLDS,vehicleKeys,originOf} from './vehicle.js?v=20261128-range-r1';
 // Spec 13.1 (2026-11-25): real vehicle values are never saved. The saved snapshot is the previous snapshot
 // with only the mock items overwritten; `origin` itself is never saved, so the format stays the same.
 function snapshotForSave(previous,vehicle){
@@ -31,12 +31,14 @@ export function advance(s,previous,vehicle,{detect=true,now=Date.now()}={}){
  if(detect&&!d.distanceHold){
   // Keep the low-range observation until a meaningful total increase occurs.
   // This is a mock heuristic, not a claim that range alone proves a real refuel.
-  const lows=[s.lowRangeKm,previous?.range,d.range].filter(n=>Number.isFinite(n)&&n>=0&&n<FUEL_THRESHOLDS.lowFuelKm);
-  if(lows.length)s.lowRangeKm=Math.min(...lows);
-  if(Number.isFinite(s.lowRangeKm)&&d.range!==null&&d.range-s.lowRangeKm>=FUEL_THRESHOLDS.refuelJumpKm){
-   s.refuelDetails={beforeKm:s.lowRangeKm,afterKm:d.range};s.lowRangeKm=null;
-   enqueue(s,'recovery');addBadge(s,'meal',now);
-   s.items??=[];if(!s.items.includes('bowl'))s.items.push('bowl');
+  if(originOf(vehicle,'rangeRemainingKm')==='mock'){
+   const lows=[s.lowRangeKm,previous?.demoRange,d.demoRange].filter(n=>Number.isFinite(n)&&n>=0&&n<FUEL_THRESHOLDS.lowFuelKm);
+   if(lows.length)s.lowRangeKm=Math.min(...lows);
+   if(Number.isFinite(s.lowRangeKm)&&d.demoRange!==null&&d.demoRange-s.lowRangeKm>=FUEL_THRESHOLDS.refuelJumpKm){
+    s.refuelDetails={beforeKm:s.lowRangeKm,afterKm:d.demoRange};s.lowRangeKm=null;
+    enqueue(s,'recovery');addBadge(s,'meal',now);
+    s.items??=[];if(!s.items.includes('bowl'))s.items.push('bowl');
+   }
   }
   s.pendingGrowthStage=Math.max(s.ackStage||1,s.pendingGrowthStage||1,d.stage);
   if(s.pendingGrowthStage>s.ackStage)enqueue(s,'growth');
@@ -51,7 +53,7 @@ export function advance(s,previous,vehicle,{detect=true,now=Date.now()}={}){
   }
  }else if(!detect){
   // An explicit fixture reset must not inherit a prior low-fuel latch.
-  s.lowRangeKm=d.hungry?d.range:null;
+  s.lowRangeKm=d.hungry?d.demoRange:null;
   s.pendingGrowthStage=Math.max(s.ackStage||1,d.stage||1);
  }
  s.vehicleSnapshot=snapshotForSave(s.vehicleSnapshot,vehicle);

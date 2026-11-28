@@ -179,6 +179,27 @@ await test('HMI live: not restricted + P → parked screen; ODO packet does not 
  send(pk('gear','P'));assert.match(screen(),/잠시 쉬어가요/);
  send(pk('odometerKm',45000));const s=JSON.parse(storage.get('bungbung-v1'));assert.equal(s.ackStage,1);assert.equal(s.maxDistanceKm,0);assert.match(screen(),/잠시 쉬어가요/);
 });
+await test('HMI live: real range is display only, preserves 0, and disappears on permission failure or expiry',()=>{
+ const readRange=(value,opt)=>send(pk('rangeRemainingKm',value,opt));
+ assert.match(screen(),/주행 가능 거리<strong>— km/);
+ for(const km of [49,150,0]){
+  readRange(km);assert.match(screen(),new RegExp('주행 가능 거리<strong>'+km+' km'));
+  assert.doesNotMatch(screen(),/냠냠|주유 후 회복|주유소 들를까/);
+ }
+ readRange(null,{status:'NO_PERMISSION'});assert.match(screen(),/주행 가능 거리<strong>— km/);
+ readRange(0);clock+=14000;send(pk('uxRestricted',false));send(pk('gear','P'));
+ clock+=1001;tick();assert.match(screen(),/주행 가능 거리<strong>— km/);
+ const latest=JSON.parse(storage.get('bungbung-v1'));
+ assert.equal(latest.lowRangeKm,null);assert.equal(latest.refuelDetails,null);
+ assert(!latest.badges.includes('meal'));assert(!latest.items.includes('bowl'));
+ assert.deepEqual(latest.vehicleSnapshot,JSON.parse(savedBefore).vehicleSnapshot);
+ send(pk('uxRestricted',true));send(pk('gear','D'));readRange(49);assert.match(screen(),/49 km/);
+ readRange(150);assert.match(screen(),/150 km/);assert.doesNotMatch(screen(),/주유 완료|배불러/);
+ send(pk('uxRestricted',false));send(pk('gear','P'));
+ assert.equal(signalStatus('rangeRemainingKm',pk('rangeRemainingKm',0),clock),'0 km (0초 전)');
+ assert.equal(signalStatus('rangeRemainingKm',pk('rangeRemainingKm',-1),clock),'오류');
+ assert.equal(signalStatus('rangeRemainingKm',pk('rangeRemainingKm',150,{at:clock-15001}),clock),'오래됨');
+});
 await test('HMI live: saved data has no real values',()=>{
  const s=JSON.parse(storage.get('bungbung-v1'));assert.deepEqual(s.vehicleSnapshot,JSON.parse(savedBefore).vehicleSnapshot);
 });
