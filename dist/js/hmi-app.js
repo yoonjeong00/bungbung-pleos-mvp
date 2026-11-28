@@ -1,13 +1,18 @@
-import {installRecording} from './recording.js?v=20261128-range-r1';
-import {welcome,cleanPetName,escapeHtml,petParticle} from './onboarding.js?v=20261128-range-r1';
-import {DemoSession} from './demo-session.js?v=20261128-range-r1';
-import {PresentationController} from './presentation.js?v=20261128-range-r1';
-import {art as artwork} from './hmi-art.js?v=20261128-range-r1';
-import {icon} from './hmi-icons.js?v=20261128-range-r1';
-import {VehicleProvider,ScenarioPlayer,scenes,baseline,FUEL_THRESHOLDS,TEMP_THRESHOLDS,usesMockData,originOf} from './vehicle.js?v=20261128-range-r1';
-import {derive,initial,load,save,stages,readValue,signalValid} from './logic.js?v=20261128-range-r1';
-import {advance,takeEvent,completeEvent,enqueue} from './state-machine.js?v=20261128-range-r1';
-import {createLiveConnector} from './vehicle-live.js?v=20261128-range-r1';
+import {installRecording} from './recording.js?v=20261128-motion-r1';
+import {welcome,cleanPetName,escapeHtml,petParticle} from './onboarding.js?v=20261128-motion-r1';
+import {DemoSession} from './demo-session.js?v=20261128-motion-r1';
+import {PresentationController} from './presentation.js?v=20261128-motion-r1';
+import {art as artwork} from './hmi-art.js?v=20261128-motion-r1';
+import {icon} from './hmi-icons.js?v=20261128-motion-r1';
+import {VehicleProvider,ScenarioPlayer,scenes,baseline,FUEL_THRESHOLDS,TEMP_THRESHOLDS,usesMockData,originOf} from './vehicle.js?v=20261128-motion-r1';
+import {derive,initial,load,save,stages,readValue,signalValid} from './logic.js?v=20261128-motion-r1';
+import {advance,takeEvent,completeEvent,enqueue} from './state-machine.js?v=20261128-motion-r1';
+import {createLiveConnector} from './vehicle-live.js?v=20261128-motion-r1';
+import {blinkPreviewEnabled,blinkPreviewDeadline,ParkedBlink,blinkLayer} from './parked-blink.js?v=20261128-motion-r1';
+import {ParkedRoomMotion,parkedRoomLayers} from './parked-room-motion.js?v=20261128-motion-r1';
+import {ParkedTap,heartLayer} from './parked-tap.js?v=20261128-motion-r1';
+import {nativeParkedDeadline} from './parked-motion-native.js?v=20261128-motion-r1';
+const blinkPreview=['http:','https:'].includes(location.protocol)&&!window.PleosVehicle&&blinkPreviewEnabled(location.search,location.hostname);
 const art=(n,c='')=>artwork(n,`art ${c}`),$=s=>document.querySelector(s),fmt=n=>n===null?'—':Math.round(n).toLocaleString('ko-KR');
 let adbSimulation=false;
 const recordingMode=new URLSearchParams(location.search).get('record')==='1';
@@ -26,6 +31,77 @@ const motion=new PresentationController({onChange(active){
  room.classList.toggle('touch',Boolean(active));
  if(active){const bubble=document.createElement('div');bubble.className='bubble';bubble.textContent=active.payload.text;room.append(bubble)}
 }});
+const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+let blinkRoom=null,blinkSuspended=false;
+const nativePreviewAllowed=()=>liveCapable&&location.origin==='https://appassets.androidplatform.net'&&window.__bungbungDebugParkedMotion===true;
+let nativeMotion=nativePreviewAllowed();
+const hasRoomMotion=()=>blinkPreview||nativeMotion;
+const feedbackDeadline=now=>{
+ if(!blinkRoom?.isConnected||blinkRoom.querySelector('.room-image')?.naturalWidth!==1536)return 0;
+ const state={home:page==='home',hidden:document.hidden||blinkSuspended,reduced:reducedMotion?.matches===true,
+  parked:d.parked,restricted:d.restricted,dangerous:d.dangerous};
+ if(nativeMotion)return nativeParkedDeadline(v,{...state,enabled:isLive()&&!recordingMode&&!adbSimulation},now);
+ return blinkPreviewDeadline(v,{...state,preview:blinkPreview,demo:session.active},now);
+};
+const blink=new ParkedBlink({deadline:feedbackDeadline,onClosed:closed=>blinkRoom?.classList.toggle('toto-blink-active',closed)});
+let feedbackReset=false, assetEpoch=0, expiryTimer=null, roomActors=null;
+const parkedIdle=new ParkedRoomMotion({deadline:feedbackDeadline,paint({sway,smile,eyelid}){
+ if(!roomActors)return;
+ roomActors.actor.style.setProperty('--toto-sway',`${-sway}deg`);
+ roomActors.smile.style.opacity=smile;
+ if(roomActors.eyelid!==eyelid){
+  roomActors.eyelid=eyelid;
+  roomActors.eyes.forEach((eye,i)=>eye.hidden=i!==eyelid);
+ }
+},ended:safe=>{if(safe)blink.start();else clearParkedLayers()}});
+const touch=new ParkedTap({deadline:feedbackDeadline,onHeart:visible=>{
+ blinkRoom?.classList.toggle('toto-tap-active',visible);
+ if(visible){parkedIdle.stop();blink.reset();}
+ else if(!feedbackReset&&feedbackDeadline(Date.now())>Date.now()){
+  if(roomActors)parkedIdle.start();else blink.start();
+ }
+}});
+function clearParkedLayers(){
+ clearTimeout(expiryTimer);expiryTimer=null;
+ blinkRoom?.classList.remove('toto-motion-ready');
+ roomActors=null;
+}
+function stopFeedback(){
+ ++assetEpoch;
+ feedbackReset=true;
+ parkedIdle.stop();blink.reset();touch.stop();
+ clearParkedLayers();
+ feedbackReset=false;
+}
+function syncBlink(){
+ stopFeedback();
+ blinkRoom=hasRoomMotion()?$('.room-stage'):null;
+ if(!blinkRoom)return;
+ const room=blinkRoom, poster=room.querySelector('.room-image');
+ if(!poster)return;
+ const epoch=assetEpoch;
+ const ready=async()=>{
+  if(epoch!==assetEpoch||!room.isConnected||feedbackDeadline(Date.now())<=Date.now())return;
+  const layers=room.querySelector('.toto-room-movement');
+  if(!layers){blink.start();return;}
+  try {await Promise.all([...layers.querySelectorAll('img')].map(img=>img.decode()));}
+  catch {if(epoch===assetEpoch&&room.isConnected)blink.start();return;}
+  if(epoch!==assetEpoch||!room.isConnected||feedbackDeadline(Date.now())<=Date.now())return;
+  roomActors={actor:layers.querySelector('.toto-motion-actor'),smile:layers.querySelector('.toto-motion-smile'),
+   eyes:[...layers.querySelectorAll('.toto-motion-eye')],eyelid:null};
+  room.classList.add('toto-motion-ready');
+  const checkDeadline=()=>{
+   if(epoch!==assetEpoch)return;
+   const now=Date.now(), wait=feedbackDeadline(now)-now;
+   if(wait<=0)stopFeedback();else expiryTimer=setTimeout(checkDeadline,wait);
+  };
+  checkDeadline();
+  if(!touch.active)parkedIdle.start();
+ };
+ if(poster.naturalWidth===1536)ready();
+ else poster.addEventListener('load',ready,{once:true});
+}
+reducedMotion?.addEventListener('change',syncBlink);
 const badges=[['first','첫 드라이브','토토와 첫 주행을 함께했어요'],['meal','배부른 날','주유 후 토토가 기운을 되찾았어요'],['grow','첫 성장','함께 달리며 한 단계 성장했어요'],['cold','추운 날 드라이브',`${TEMP_THRESHOLDS.coldMaxC}° 이하 추운 날에 함께 달렸어요`],['time','함께한 시간','함께한 시간 배지는 준비 중이에요'],['mileage','1만 km의 추억','누적 거리 배지는 준비 중이에요']];
 const items=[['headphones','헤드폰'],['scarf','머플러'],['cap','베레모'],['flower','꽃 브로치'],['star','별 브로치'],['knit','니트 모자']];
 const btn=(label,action,cls='primary')=>`<button class="${cls}" data-action="${action}">${label}</button>`;
@@ -35,7 +111,7 @@ const bar=()=>`<span class="progress" role="progressbar" aria-label="성장 진�
 function rail(){return `<aside class="vehicle-rail"><div class="rail-top"><span class="rail-gear">${v.gear||'—'}</span>${!d.parked&&!d.restricted?`<div class="rail-speed">${fmt(demoSpeedKmH)}<small>km/h</small></div>`:''}</div>${d.parked||d.restricted?'<div class="rail-speed">0<small> km/h</small></div>':'<div class="belt">♧ &nbsp; 안전벨트를 착용하세요</div>'}${art('car','rail-car')}<div class="rail-fuel"><div class="fuel-pill">${icon('fuel')}<b>${fmt(d.range)} <small>km</small></b></div>${d.range!==null?`<div class="fuel-track"><i style="width:${Math.min(100,d.range/7)}%"></i></div>`:''}</div></aside>`}
 function tabs(){return `<nav class="app-tabs" aria-label="앱 메뉴">${[['home','home','내 방'],['growth','growth','성장 기록'],['closet','closet','꾸미기']].map(([id,i,t])=>`<button data-page="${id}" class="${page===id||(page==='badges'&&id==='growth')?'active':''}">${icon(i)}${t}</button>`).join('')}</nav>`}
 function heading(title,sub='',back=false,extra=''){return `<div class="page-heading">${back?btn(icon('back'),'back','back'):''}<h1>${title}</h1>${sub?`<p class="subtitle">${sub}</p>`:''}${extra}</div>`}
-function home(){return `${heading(escapeHtml(s.petName||'토토')+petParticle(s.petName,'과','와')+' 잠시 쉬어가요',d.temp!==null&&d.temp<=TEMP_THRESHOLDS.coldMaxC?'추운 날이에요 · 따뜻하게 챙겨 입어요':'',false,btn('이름 바꾸기','rename','rename-button'))}<div class="page-content home-layout"><div class="room-stage"><img class="room-image" src="hmi-assets/home-room.png" alt="하얀 음악방에서 쉬는 두 귀의 토토"><button class="room-pet-button" data-action="pet" aria-label="토토 쓰다듬기"></button><div class="room-distance">함께 달린 거리<b>${fmt(d.distance)} km</b></div><div class="room-level">${icon('growth')}<b>Lv.${d.stage} ${stages[d.stage].name}</b>${bar()}<span>${d.next?`다음 성장까지 ${remaining()} km`:'모든 성장 완료'}</span></div></div><div class="home-side"><button class="metric-link surface" data-page="range">${icon('fuel')}<span>주행 가능 거리<strong>${fmt(d.range)} km</strong></span>${icon('right','chev')}</button><button class="metric-link surface" data-action="summary">${icon('route')}<span>오늘의 주행<strong>${fmt(readValue(v,'tripDistanceKm'))} km · ${fmt(readValue(v,'tripTimeMin'))}분</strong></span>${icon('right','chev')}</button><div class="closet-shortcut surface"><div class="mini-items">${art('headphones')}${art('cap')}</div><small>적용 소품: ${items.find(([id])=>id===(s.hat==='none'?'headphones':s.hat))?.[1]||'헤드폰'} · 방은 대표 이미지(성장·착용 합성 준비 중)</small>${btn('옷장 열기　'+icon('right'),'closet')}</div></div></div>${tabs()}`}
+function home(){return `${heading(escapeHtml(s.petName||'토토')+petParticle(s.petName,'과','와')+' 잠시 쉬어가요',d.temp!==null&&d.temp<=TEMP_THRESHOLDS.coldMaxC?'추운 날이에요 · 따뜻하게 챙겨 입어요':'',false,btn('이름 바꾸기','rename','rename-button'))}<div class="page-content home-layout"><div class="room-stage"><img class="room-image" src="hmi-assets/home-room.png" alt="하얀 음악방에서 쉬는 두 귀의 토토">${hasRoomMotion()?`<div class="toto-overlay"><div class="room-visual">${parkedRoomLayers+blinkLayer+heartLayer}</div></div>`: ''}<button class="room-pet-button" data-action="pet" aria-label="토토 쓰다듬기"></button><div class="room-distance">함께 달린 거리<b>${fmt(d.distance)} km</b></div><div class="room-level">${icon('growth')}<b>Lv.${d.stage} ${stages[d.stage].name}</b>${bar()}<span>${d.next?`다음 성장까지 ${remaining()} km`:'모든 성장 완료'}</span></div></div><div class="home-side"><button class="metric-link surface" data-page="range">${icon('fuel')}<span>주행 가능 거리<strong>${fmt(d.range)} km</strong></span>${icon('right','chev')}</button><button class="metric-link surface" data-action="summary">${icon('route')}<span>오늘의 주행<strong>${fmt(readValue(v,'tripDistanceKm'))} km · ${fmt(readValue(v,'tripTimeMin'))}분</strong></span>${icon('right','chev')}</button><div class="closet-shortcut surface"><div class="mini-items">${art('headphones')}${art('cap')}</div><small>적용 소품: ${items.find(([id])=>id===(s.hat==='none'?'headphones':s.hat))?.[1]||'헤드폰'} · 방은 대표 이미지(성장·착용 합성 준비 중)</small>${btn('옷장 열기　'+icon('right'),'closet')}</div></div></div>${tabs()}`}
 function growth(){return `${heading('함께 자라는 토토',`함께 달린 거리 ${fmt(d.distance)} km`)}<div class="page-content growth-layout"><div class="growth-cards">${stages.slice(1).map((stage,i)=>`<button data-stage="${i+1}" class="growth-card surface ${d.stage===i+1?'current':d.stage<i+1?'future':''}">${art('stage'+(i+1),'stage-art')}<h2>0${i+1} ${stage.name}</h2><p>${i?fmt(stage.km)+' km':'첫 만남'}</p></button>`).join('')}</div><div class="growth-progress surface">${d.next?`다음 성장까지 ${remaining()} km`:'토토가 어른이 되었어요'}${bar()}</div><div class="badge-strip">${badges.slice(0,3).map(([id,name])=>`<button data-badge="${id}">${art('badge-'+id)}${name}</button>`).join('')}</div></div>${tabs()}`}
 function badgePage(){const b=badges.find(x=>x[0]===selectedBadge),owned=s.badges.includes(b[0]);return `${heading('배지 도감','함께 만든 작은 기록',true,`<span class="count">획득한 배지 <b>${s.badges.length} / 6</b></span>`)}<div class="page-content badge-layout"><div class="badge-grid">${badges.map(([id,name])=>`<button data-badge="${id}" class="badge-card surface ${id===selectedBadge?'selected':''}">${art('badge-'+id)}<span>${name}</span>${s.badges.includes(id)?'':icon('lock','lock')}</button>`).join('')}</div><div class="badge-detail surface">${art('badge-'+b[0])}<h2>${b[1]}</h2><p>${b[2]}</p><span class="status-pill ${owned?'':'preview'}">${icon(owned?'check':'lock')}${owned?'획득 완료':['time','mileage'].includes(b[0])?'준비 중':'아직 잠겨 있어요'}</span>${art('stage3','detail-pet')}</div></div>${tabs()}`}
 function fittingArt(){return art(pending==='cap'?'wardrobe':'stage'+d.stage)+(pending!=='cap'&&pending!=='headphones'?art(pending,'fitting-overlay'):'')}
@@ -79,12 +155,14 @@ function driveMood(){
 function criticalWarning(){return `<section class="critical-warning" role="alert"><h1>차량 경고를 확인해 주세요</h1><p>안전한 곳에 정차하고 차량의 경고 안내를 따라 주세요.</p><small>캐릭터·꾸미기·성장 처리가 잠시 중단돼요 · 모의 경고 시연</small></section>`;}
 function mapPanel(){return `<section class="map-panel"><div class="map-fill">${art('map')}</div><div class="turn-card"><span class="turn-arrow"><svg viewBox="0 0 32 32" width="100%" height="100%"><path d="M6 28V15Q6 9 12 9H25M19 3L26 9L19 15" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/></svg></span><b>300 m 앞 우회전</b>${icon('right')}</div><div class="eta">${icon('route')}<b>12분 · <small>6.4 km</small></b></div></section>`}
 function drive(){const visibleStage=s.ackStage||1,mood=driveMood(),rain=!mood&&raining(),waiting=demoSpeedKmH===0&&v.gear==='D';return `${mapPanel()}<section class="drive-app"><div class="drive-brand">${art('logo')}<b>마이카펫</b><span class="weather-label">${icon(mood?mood.icon:rain?'wiper':'route')}${mood?mood.label:rain?'와이퍼 작동 중':waiting?'신호 대기 · D':'함께 달리는 중'}</span></div><div class="drive-character ${rain?'':'basic'} ${!mood&&!rain&&visibleStage===1?'departure-scene':''} ${mood?'mood-scene':''} ${!mood&&(rain||visibleStage!==1)?'cutout-scene':''}">${mood?`<img class="art drive-pet" src="hmi-assets/bungbung_child_${mood.image}.png" alt="${mood.label} 상태의 토토" decoding="async">`:!rain&&visibleStage===1?'<div class="departure-visual"><img class="departure-art" src="hmi-assets/toto-departure.webp" width="1440" height="810" alt="안전벨트를 매고 함께 출발하는 토토" decoding="async"></div>':art(rain?'rain':'stage'+visibleStage)}<div class="drive-stats">${d.range===null?'':`<span>${icon('fuel')}${fmt(d.range)} km</span>`}${d.temp===null?'':`<span>${icon('temp')}${fmt(d.temp)}°</span>`}</div></div><div class="drive-message">${icon(mood?mood.icon:rain?'rain':'check')}<span>${mood?mood.message:rain?'톡톡, 비가 와요':waiting?'잠시 멈췄어요':'오늘도 함께 달려요'}</span><small class="drive-stage-label">성장 단계: ${stages[visibleStage].name}</small></div></section>`}
-function render(){motion.stop('render');motion.setParked(d.parked&&!document.hidden);const event=d.parked?(previewEvent||takeEvent(s,d)):null;$('#screen-body').classList.toggle('driving',!d.parked&&!d.restricted);$('#screen-body').innerHTML=rail()+(d.dangerous?(!d.parked&&!d.restricted?mapPanel():'')+criticalWarning():d.restricted?`<section class="locked">${icon('lock')}<h1>차량 상태를 확인하고 있어요</h1><p>사용 가능한 상태에서 다시 만나요.<br>캐릭터와 상호작용이 잠시 중단됩니다.</p></section>`:!d.parked?drive():`<section class="app-window"><div class="app-brand">${art('logo','logo')}마이카펫 <span class="parked-chip">주차 중</span></div>${event?eventPage(event):page==='home'?home():page==='growth'?growth():page==='badges'?badgePage():page==='closet'?closet():`${heading('주행 가능 거리','',true)}<div class="page-content metric-detail">${art('stage'+d.stage)}<div><h2>${d.range===null?'차량 정보를 기다리고 있어요':d.demoRange===null?'차량에서 받은 거리':d.range<FUEL_THRESHOLDS.lowFuelKm?'배고파… 주유소 들를까?':d.range<FUEL_THRESHOLDS.hungryKm?'조금 출출해':'배불러, 든든해!'}</h2><strong>${fmt(d.range)} km</strong><p>${d.range===null?'차량에서 제공되지 않는 정보예요.':d.demoRange===null?'차량이 알려주는 예상 거리예요.':'현재는 모의 주행 가능 거리 증가로 회복을 시연해요.'}</p>${btn('내 방으로','home')}</div></div>`}</section>`);session.checkpoint(s);syncForm();$('#demo-return').hidden=!session.active;$('.mock-label').textContent=session.active?'모의 데이터 · 시연 중 (저장 안 함)':usesMockData(v)?'모의 데이터':'실차 연결 시험 중';$('#data-source').textContent=recordingMode?'시연용 모의 차량 데이터 · 실제 SDK 연동 영상 아님':adbSimulation?'앱 동작: ADB 모의 데이터 · SDK 거리는 별도 표시':isLive()?'앱 동작: 실차 연결 시험 중 · 주행 제한·기어 신호로 화면 판단':'앱 동작: 모의 차량 데이터 · SDK 거리는 별도 표시'}
+function render(){stopFeedback();motion.stop('render');motion.setParked(d.parked&&!document.hidden);const event=d.parked?(previewEvent||takeEvent(s,d)):null;$('#screen-body').classList.toggle('driving',!d.parked&&!d.restricted);$('#screen-body').innerHTML=rail()+(d.dangerous?(!d.parked&&!d.restricted?mapPanel():'')+criticalWarning():d.restricted?`<section class="locked">${icon('lock')}<h1>차량 상태를 확인하고 있어요</h1><p>사용 가능한 상태에서 다시 만나요.<br>캐릭터와 상호작용이 잠시 중단됩니다.</p></section>`:!d.parked?drive():`<section class="app-window"><div class="app-brand">${art('logo','logo')}마이카펫 <span class="parked-chip">주차 중</span></div>${event?eventPage(event):page==='home'?home():page==='growth'?growth():page==='badges'?badgePage():page==='closet'?closet():`${heading('주행 가능 거리','',true)}<div class="page-content metric-detail">${art('stage'+d.stage)}<div><h2>${d.range===null?'차량 정보를 기다리고 있어요':d.demoRange===null?'차량에서 받은 거리':d.range<FUEL_THRESHOLDS.lowFuelKm?'배고파… 주유소 들를까?':d.range<FUEL_THRESHOLDS.hungryKm?'조금 출출해':'배불러, 든든해!'}</h2><strong>${fmt(d.range)} km</strong><p>${d.range===null?'차량에서 제공되지 않는 정보예요.':d.demoRange===null?'차량이 알려주는 예상 거리예요.':'현재는 모의 주행 가능 거리 증가로 회복을 시연해요.'}</p>${btn('내 방으로','home')}</div></div>`}</section>`);session.checkpoint(s);syncForm();$('#demo-return').hidden=!session.active;$('.mock-label').textContent=session.active?'모의 데이터 · 시연 중 (저장 안 함)':usesMockData(v)?'모의 데이터':'실차 연결 시험 중';$('#data-source').textContent=recordingMode?'시연용 모의 차량 데이터 · 실제 SDK 연동 영상 아님':adbSimulation?'앱 동작: ADB 모의 데이터 · SDK 거리는 별도 표시':isLive()?'앱 동작: 실차 연결 시험 중 · 주행 제한·기어 신호로 화면 판단':'앱 동작: 모의 차량 데이터 · SDK 거리는 별도 표시';syncBlink()}
 $('#system-dock').innerHTML=`<div class="climate">22° ${icon('seat')}</div><span class="dock-separator"></span><div class="dock-apps">${['home','nav','music','phone','grid','settings'].map(n=>`<span class="dock-item ${n==='nav'?'selected':''}" aria-hidden="true">${icon(n)}</span>`).join('')}</div><span class="dock-separator"></span><div class="climate">${icon('seat')} 22°</div>`;
 let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2200)}
 function syncForm(){for(const k of ['gear','ignition','odometerKm','rangeRemainingKm','outsideTempC','tripDistanceKm','tripTimeMin','uxRestricted']){const el=$('#manual').elements[k];el.value=v[k]===null?(k==='uxRestricted'?'null':''):String(v[k])}}
-provider.subscribe(next=>{const before=originOf(v,'rangeRemainingKm')==='mock'?readValue(v,'rangeRemainingKm'):null,after=originOf(next,'rangeRemainingKm')==='mock'?readValue(next,'rangeRemainingKm'):null;if(before!==null&&after!==null&&after-before>=FUEL_THRESHOLDS.refuelJumpKm)markRefuel();v=next;d=advance(s,d,v);if(!d.parked)previewEvent=null;render()});
-$('#screen-body').addEventListener('click',e=>{const el=e.target.closest('button');if(!el||!d.parked||document.hidden||el.isConnected===false||el.disabled)return;if(el.dataset.page){if(page===el.dataset.page)return;page=el.dataset.page;pending=s.hat==='none'?'headphones':s.hat;render();return}if(el.dataset.badge){selectedBadge=el.dataset.badge;page='badges';render();return}if(el.dataset.stage){toast(`${stages[+el.dataset.stage].name} · ${+el.dataset.stage<=d.stage?'성장 기록':'함께 '+fmt(stages[+el.dataset.stage].km)+' km를 달리면 만나요'}`);return}if(el.dataset.category){if(category===el.dataset.category)return;category=el.dataset.category;render();return}if(el.dataset.item){if(pending===el.dataset.item)return;pending=el.dataset.item;updateItemSelection();return}switch(el.dataset.action){case'rename':previewEvent='birth';break;case'welcome-start':{const input=$('#pet-name');if(!input)return;s.petName=cleanPetName(input.value);s.onboardingComplete=true;if(previewEvent)previewEvent=null;else if(s.activeEvent==='birth')completeEvent(s,d);page='home';break;}case'pet':motion.start('joy',{duration:1600,payload:{text:petLine()}});return;case'closet':page='closet';pending=s.hat==='none'?'headphones':s.hat;category='소품';break;case'home':page='home';previewEvent=null;break;case'back':if(previewEvent)previewEvent=null;else if(s.activeEvent)completeEvent(s,d);page=page==='badges'?'growth':'home';break;case'summary':previewEvent='summary';break;case'cancel':pending=s.hat==='none'?'headphones':s.hat;page='home';break;case'apply':if(category!=='소품'){toast('현재 기본 제공 디자인을 사용 중이에요.');return}if(!s.items.includes(pending)){toast('아직 잠긴 소품이에요. 미리보기만 가능해요.');return}s.hat=pending==='headphones'?'none':pending;session.checkpoint(s);toast('소품 선택을 저장했어요. 착용 이미지는 예시예요.');return;case'confirm':if(previewEvent)previewEvent=null;else completeEvent(s,d);page='home';break}render()});
+provider.subscribe(next=>{const before=originOf(v,'rangeRemainingKm')==='mock'?readValue(v,'rangeRemainingKm'):null,after=originOf(next,'rangeRemainingKm')==='mock'?readValue(next,'rangeRemainingKm'):null;if(before!==null&&after!==null&&after-before>=FUEL_THRESHOLDS.refuelJumpKm)markRefuel();const prior=d, stable=nativeMotion&&isLive()&&next.gear===v.gear&&next.uxRestricted===v.uxRestricted;
+ v=next;d=advance(s,d,v);
+ if(stable&&JSON.stringify(d)===JSON.stringify(prior)&&blinkRoom?.isConnected&&feedbackDeadline(Date.now())>Date.now())return;if(!d.parked)previewEvent=null;render()});
+$('#screen-body').addEventListener('click',e=>{const el=e.target.closest('button');if(!el||!d.parked||document.hidden||el.isConnected===false||el.disabled)return;if(el.dataset.page){if(page===el.dataset.page)return;page=el.dataset.page;pending=s.hat==='none'?'headphones':s.hat;render();return}if(el.dataset.badge){selectedBadge=el.dataset.badge;page='badges';render();return}if(el.dataset.stage){toast(`${stages[+el.dataset.stage].name} · ${+el.dataset.stage<=d.stage?'성장 기록':'함께 '+fmt(stages[+el.dataset.stage].km)+' km를 달리면 만나요'}`);return}if(el.dataset.category){if(category===el.dataset.category)return;category=el.dataset.category;render();return}if(el.dataset.item){if(pending===el.dataset.item)return;pending=el.dataset.item;updateItemSelection();return}switch(el.dataset.action){case'rename':previewEvent='birth';break;case'welcome-start':{const input=$('#pet-name');if(!input)return;s.petName=cleanPetName(input.value);s.onboardingComplete=true;if(previewEvent)previewEvent=null;else if(s.activeEvent==='birth')completeEvent(s,d);page='home';break;}case'pet':if(hasRoomMotion()){touch.trigger();return;}motion.start('joy',{duration:1600,payload:{text:petLine()}});return;case'closet':page='closet';pending=s.hat==='none'?'headphones':s.hat;category='소품';break;case'home':page='home';previewEvent=null;break;case'back':if(previewEvent)previewEvent=null;else if(s.activeEvent)completeEvent(s,d);page=page==='badges'?'growth':'home';break;case'summary':previewEvent='summary';break;case'cancel':pending=s.hat==='none'?'headphones':s.hat;page='home';break;case'apply':if(category!=='소품'){toast('현재 기본 제공 디자인을 사용 중이에요.');return}if(!s.items.includes(pending)){toast('아직 잠긴 소품이에요. 미리보기만 가능해요.');return}s.hat=pending==='headphones'?'none':pending;session.checkpoint(s);toast('소품 선택을 저장했어요. 착용 이미지는 예시예요.');return;case'confirm':if(previewEvent)previewEvent=null;else completeEvent(s,d);page='home';break}render()});
 function fixture(view){enterDemo();player.reset();const driveViews={rain:{wiperState:'LOW'},tire:{tireWarning:true},yellow:{safetyWarnings:[{id:'washer',level:'yellow',label:'워셔액 부족'}]},red:{safetyWarnings:[{id:'brake',level:'red',label:'브레이크 경고'}]},hungry:{rangeRemainingKm:49},refuel:{rangeRemainingKm:620},cold:{outsideTempC:1},hot:{outsideTempC:33},night:{headlightOn:true}};markRefuel(view==='refuel');demoSpeedKmH=view in driveViews?48:0;s={...initial(),ackStage:3,maxDistanceKm:2180,hat:'cap',badges:['first','meal','grow'],items:['headphones','cap','scarf','bowl']};v={...baseline(),odometerKm:12180,gear:view in driveViews?'D':'P',rangeRemainingKm:view==='recovery'?620:420,...(driveViews[view]||{})};provider.set(v,false);v=provider.value;d=advance(s,null,v,{detect:false});page=['home','growth','badges','closet'].includes(view)?view:'home';pending='cap';category='소품';previewEvent=['recovery','summary'].includes(view)?view:null;render()}
 function runScene(i,{continuous=false}={}){
  enterDemo();demoSpeedKmH=[1,2,5].includes(i)?48:0;
@@ -127,12 +205,17 @@ window.addEventListener('bungbung-simulation',event=>{
   enterDemo();player.pause();demoSpeedKmH=null;provider.set(packet.patch);
  }
 });
-window.addEventListener('pagehide',()=>{player.pause();motion.setParked(false)});
-window.addEventListener('pageshow',()=>motion.setParked(d.parked&&!document.hidden));
-document.addEventListener('visibilitychange',()=>{if(document.hidden){player.pause();motion.setParked(false)}else motion.setParked(d.parked)});
+window.addEventListener('pagehide',()=>{blinkSuspended=true;stopFeedback();player.pause();motion.setParked(false)});
+window.addEventListener('pageshow',()=>{blinkSuspended=false;motion.setParked(d.parked&&!document.hidden);syncBlink()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopFeedback();player.pause();motion.setParked(false)}else{motion.setParked(d.parked);syncBlink()}});
 if(['embedded','android'].some(key=>new URLSearchParams(location.search).has(key)))document.body.classList.add('embedded');
 if(new URLSearchParams(location.search).has('android'))document.body.classList.add('android-app');
 render();
 // Web connector (live mode only). The 1 s tick re-renders only when the screen decision changes.
+// Enabled only from our local Android debug activity; a query flag cannot enable it.
+window.addEventListener('bungbung-debug-parked-motion',()=>{
+ if(nativeMotion||!nativePreviewAllowed())return;
+ nativeMotion=true;render();
+});
 const live=createLiveConnector({win:window,provider,isLive,setTimer:(fn,ms)=>setInterval(fn,ms),clearTimer:id=>clearInterval(id),onTick(){const next=derive(v,s);if(next.restricted!==d.restricted||next.parked!==d.parked||next.dangerous!==d.dangerous||next.range!==d.range){d=advance(s,d,v);if(!d.parked)previewEvent=null;render();}}});
 if(liveCapable){live.start();v=provider.value;d=advance(s,d,v);render();}

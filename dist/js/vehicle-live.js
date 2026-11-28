@@ -4,7 +4,7 @@
 // - ODO is remembered but NOT applied this step: growth still uses the fixed hatch ODO, so a real ODO
 //   would jump Toto to adult. It goes in together with saving the real hatch ODO (spec 14 / 6.2).
 // - A 1 s timer re-checks freshness so stale safety signals expire even when no packet arrives.
-import {bridgePatch} from './vehicle.js?v=20261128-range-r1';
+import {bridgePatch} from './vehicle.js?v=20261128-motion-r1';
 export const HELD_ITEMS=Object.freeze(['odometerKm']); // remembered, not applied yet
 export const TICK_MS=1000;
 export function createLiveConnector({win,provider,isLive,onTick=()=>{},setTimer=(fn,ms)=>win.setInterval(fn,ms),clearTimer=id=>win.clearInterval(id)}){

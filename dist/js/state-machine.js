@@ -1,5 +1,5 @@
-import {derive,readValue} from './logic.js?v=20261128-range-r1';
-import {FUEL_THRESHOLDS,TEMP_THRESHOLDS,vehicleKeys,originOf} from './vehicle.js?v=20261128-range-r1';
+import {derive,readValue} from './logic.js?v=20261128-motion-r1';
+import {FUEL_THRESHOLDS,TEMP_THRESHOLDS,vehicleKeys,originOf} from './vehicle.js?v=20261128-motion-r1';
 // Spec 13.1 (2026-11-25): real vehicle values are never saved. The saved snapshot is the previous snapshot
 // with only the mock items overwritten; `origin` itself is never saved, so the format stays the same.
 function snapshotForSave(previous,vehicle){

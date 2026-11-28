@@ -1,5 +1,5 @@
 // Independent read-only SDK monitor: never writes the mock provider or saved pet.
-import {realMaxAgeMs} from './logic.js?v=20261128-range-r1';
+import {realMaxAgeMs} from './logic.js?v=20261128-motion-r1';
 // N12: only ODO packets belong here. Legacy packets have no `item` and are ODO (VEHICLE_BRIDGE_CONTRACT.md 2.1).
 export const isOdometerPacket=p=>!!p&&typeof p==='object'&&p.source==='pleos-sdk'&&(p.item===undefined||p.item===null||p.item==='odometerKm');
 // Safety signals shown for testers (spec 13.1: ignition is displayed only, never used to lock the screen).

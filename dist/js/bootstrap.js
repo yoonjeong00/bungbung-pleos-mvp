@@ -4,7 +4,7 @@ const params=new URLSearchParams(location.search);
 if(params.has('android')||params.has('embedded'))document.body.classList.add('embedded');
 if(params.has('android'))document.body.classList.add('android-app');
 if(params.get('record')==='1')document.body.classList.add('recording-mode');
-import('./hmi-app.js?v=20261128-range-r1').catch(error=>{
+import('./hmi-app.js?v=20261128-motion-r1').catch(error=>{
  console.error('Bungbung initialization failed',error);
  const host=document.querySelector('#screen-body');
  if(!host)return;
